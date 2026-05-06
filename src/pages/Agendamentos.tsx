@@ -12,7 +12,7 @@ const Agendamentos = () => {
       title: "São Paulo - Primeiro Passaporte",
       description: "Para quem está solicitando o primeiro passaporte",
       icon: FileText,
-      url: "https://forms.gle/1thPvwXtovb7Hkqp8",
+      url: "https://forms.gle/qzmEkL5VYaDG1EpJ9",
       color: "from-blue-900 to-blue-800"
     },
     {
@@ -20,7 +20,7 @@ const Agendamentos = () => {
       title: "São Paulo - Renovação de Passaporte",
       description: "Para quem já possui o passaporte vencido/a vencer",
       icon: RefreshCw,
-      url: "https://forms.gle/ZxV2gR62e3WN2Voz7",
+      url: "https://forms.gle/PEqtN7nv4DbNNmcN6",
       color: "from-green-600 to-green-700"
     },
     {
@@ -28,7 +28,7 @@ const Agendamentos = () => {
       title: "Curitiba e Florianópolis - Passaporte",
       description: "Atendimento para o Paraná e Santa Catarina",
       icon: MapPin,
-      url: "https://forms.gle/KTFFEbtuRnqohA2E8",
+      url: "https://forms.gle/uNoBF2uksbcAxt5w9",
       color: "from-red-700 to-red-800"
     }
   ];
