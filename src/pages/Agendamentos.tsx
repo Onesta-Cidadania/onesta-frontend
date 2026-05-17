@@ -30,6 +30,22 @@ const Agendamentos = () => {
       icon: MapPin,
       url: "https://forms.gle/uNoBF2uksbcAxt5w9",
       color: "from-red-700 to-red-800"
+    },
+    {
+      id: 4,
+      title: "Passaporte Ribeirão Preto - Cuiabá - Porto Velho",
+      description: "Atendimento para Ribeirão Preto, Cuiabá e Porto Velho",
+      icon: MapPin,
+      url: "https://forms.gle/S32mkimbuXZ71acz7",
+      color: "from-purple-700 to-purple-800"
+    },
+    {
+      id: 5,
+      title: "Agendamento de Filhos Menores - Benefício de Lei - SP",
+      description: "Para filhos menores de idade - Benefício de Lei em São Paulo",
+      icon: FileText,
+      url: "https://forms.gle/JzMgHRcyBpcgy3zL9",
+      color: "from-orange-600 to-orange-700"
     }
   ];
 
