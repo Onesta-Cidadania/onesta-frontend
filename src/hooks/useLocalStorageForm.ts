@@ -47,7 +47,7 @@ export interface FormData {
   requerentes: RequerenteData[];
 
   // Step 4: Restrições de Datas
-  datasRestricao: string[];
+  datasRestricao: Array<{ inicio: Date | null; fim: Date | null }>;
 
   // Step 5: Observações
   observacoes: string;
@@ -98,6 +98,21 @@ const defaultFormData: FormData = {
   revisaoConfirmado: false,
 };
 
+// Helper function to deserialize dates from localStorage
+function deserializeFormData(data: Partial<FormData>): FormData {
+  const result = { ...data };
+  
+  // Convert datasRestricao dates back to Date objects
+  if (result.datasRestricao && Array.isArray(result.datasRestricao)) {
+    result.datasRestricao = result.datasRestricao.map((range: { inicio: string | Date | null; fim: string | Date | null }) => ({
+      inicio: range.inicio ? new Date(range.inicio) : null,
+      fim: range.fim ? new Date(range.fim) : null,
+    }));
+  }
+  
+  return result;
+}
+
 export function useLocalStorageForm() {
   const [formData, setFormData] = useState<FormData>(() => {
     try {
@@ -109,7 +124,7 @@ export function useLocalStorageForm() {
           parsed.datasRestricao = parsed.datasPreferencia;
           delete parsed.datasPreferencia;
         }
-        return { ...defaultFormData, ...parsed };
+        return deserializeFormData({ ...defaultFormData, ...parsed }) as FormData;
       }
     } catch {
       // Ignore JSON parse errors
@@ -234,11 +249,16 @@ export function useLocalStorageForm() {
         },
       ],
       
-      // Restrições de Datas
+      // Restrições de Datas (períodos)
       datasRestricao: [
-        "2026-05-15",
-        "2026-05-20",
-        "2026-06-01",
+        {
+          inicio: new Date("2026-05-15"),
+          fim: new Date("2026-05-20")
+        },
+        {
+          inicio: new Date("2026-06-01"),
+          fim: new Date("2026-06-05")
+        }
       ],
       
       // Observações

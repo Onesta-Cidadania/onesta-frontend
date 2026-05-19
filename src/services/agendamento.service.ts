@@ -114,15 +114,43 @@ const separarNome = (nomeCompleto: string): { sobrenome: string; nome: string } 
 };
 
 /**
- * Transforma dados do formulário para formato do banco de dados (nova estrutura)
- * @param formData - Dados do formulário
- * @returns Dados formatados para inserção na tabela agendamentos
+ * Interface para períodos de restrição
  */
-const transformarParaAgendamento = (formData: FormData): AgendamentoInsert => {
-  // Processar datas de restrição
-  const dataInicio = formData.datasRestricao[0] ? formatarData(formData.datasRestricao[0]) : null;
-  const dataFim = formData.datasRestricao[1] ? formatarData(formData.datasRestricao[1]) : null;
-  const dataAlvo = formData.data_alvo ? formatarData(formData.data_alvo) : null;
+interface PeriodoRestricao {
+  inicio: string;
+  fim: string;
+}
+
+/**
+ * Interface para dados separados (banco e email)
+ */
+interface DadosAgendamentoSeparados {
+  dadosBanco: AgendamentoInsert;
+  dadosEmail: { periodos_restricao_email?: PeriodoRestricao[] };
+}
+
+/**
+ * Transforma dados do formulário para formato do banco de dados e email
+ * @param formData - Dados do formulário
+ * @returns Objeto com dados separados para banco e email
+ */
+const transformarParaAgendamento = (formData: FormData): DadosAgendamentoSeparados => {
+    // Processar datas de restrição (apenas o primeiro período para o banco)
+    const dataInicio = formData.datasRestricao[0]?.inicio 
+      ? formatarData(formData.datasRestricao[0].inicio.toISOString().split('T')[0]) 
+      : null;
+    const dataFim = formData.datasRestricao[0]?.fim 
+      ? formatarData(formData.datasRestricao[0].fim.toISOString().split('T')[0]) 
+      : null;
+    const dataAlvo = formData.data_alvo ? formatarData(formData.data_alvo) : null;
+
+    // Processar lista completa de períodos de restrição para o email
+    const periodosRestricaoEmail: PeriodoRestricao[] = formData.datasRestricao
+      .filter(range => range.inicio && range.fim)
+      .map(range => ({
+        inicio: formatarData(range.inicio.toISOString().split('T')[0]),
+        fim: formatarData(range.fim.toISOString().split('T')[0])
+      }));
 
   // Verifica se há assessor (pelo menos um campo preenchido)
   const possuiAssessor = !!(
@@ -131,7 +159,8 @@ const transformarParaAgendamento = (formData: FormData): AgendamentoInsert => {
     formData.assessorTelefone
   );
 
-  return {
+  // Dados para o banco de dados (apenas campos que existem na tabela)
+  const dadosBanco: AgendamentoInsert = {
     // Dados do Titular (com prefixo titular_)
     titular_nome_completo: formData.clienteNome || '',
     titular_email: formData.prenotamiEmail || '',
@@ -154,9 +183,17 @@ const transformarParaAgendamento = (formData: FormData): AgendamentoInsert => {
     data_inicio_restricao: dataInicio,
     data_fim_restricao: dataFim,
     data_alvo: dataAlvo,
-    
-    // Campo automático - não enviar para que o banco use o DEFAULT  
-    };
+  };
+
+  // Dados adicionais para o email (não salvos no banco)
+  const dadosEmail = {
+    periodos_restricao_email: periodosRestricaoEmail.length > 0 ? periodosRestricaoEmail : undefined,
+  };
+
+  return {
+    dadosBanco,
+    dadosEmail
+  };
 };
 
 /**
@@ -224,84 +261,73 @@ const prepararArquivosEmail = async (formData: FormData, codigoAgendamento: stri
 };
 
 /**
- * Gera string CSV a partir dos dados do formulário
+ * Gera string JSONC a partir dos dados do formulário
  * @param formData - Dados do formulário
- * @returns String CSV formatada
+ * @returns String JSONC formatada
  */
-const gerarCSV = (formData: FormData): string => {
-  // Header do CSV (mesma ordem do exemplo)
-  const header = [
-    'email', 'senha', 'cor_olhos', 'altura_cm', 'endereco', 'estado_civil',
-    'qtde_filhos', 'tipo_reserva', 'qtde_requerentes_adicionais',
-    'adic_1_sobrenome', 'adic_1_nome', 'adic_1_nascimento', 'adic_1_altura_cm', 'adic_1_cor_olhos',
-    'adic_2_sobrenome', 'adic_2_nome', 'adic_2_nascimento', 'adic_2_altura_cm', 'adic_2_cor_olhos',
-    'adic_3_sobrenome', 'adic_3_nome', 'adic_3_nascimento', 'adic_3_altura_cm', 'adic_3_cor_olhos',
-    'anotacoes', 'email_otp', 'senha_email_otp', 'data_inicio_restricao', 'data_fim_restricao', 'data_alvo'
-  ].join(',');
-
-  // Processar requerentes para CSV
-  const req1 = formData.requerentes[0] ? separarNome(formData.requerentes[0].nomeCompleto) : { sobrenome: '', nome: '' };
-  const req2 = formData.requerentes[1] ? separarNome(formData.requerentes[1].nomeCompleto) : { sobrenome: '', nome: '' };
-  const req3 = formData.requerentes[2] ? separarNome(formData.requerentes[2].nomeCompleto) : { sobrenome: '', nome: '' };
-
-  // Data de nascimento dos requerentes
-  const req1Nascimento = formData.requerentes[0]?.dataNascimento ? formatarData(formData.requerentes[0].dataNascimento) : '';
-  const req2Nascimento = formData.requerentes[1]?.dataNascimento ? formatarData(formData.requerentes[1].dataNascimento) : '';
-  const req3Nascimento = formData.requerentes[2]?.dataNascimento ? formatarData(formData.requerentes[2].dataNascimento) : '';
-
-  // Processar datas de restrição
-  const dataInicio = formData.datasRestricao[0] ? formatarData(formData.datasRestricao[0]) : '';
-  const dataFim = formData.datasRestricao[1] ? formatarData(formData.datasRestricao[1]) : '';
-  const dataAlvo = formData.data_alvo ? formatarData(formData.data_alvo) : '';
-
-  // Linha de dados
-  const row = [
-    formData.prenotamiEmail || '',
-    formData.prenotamiSenha || '',
-    formData.prenotamiCorOlhos || '',
-    parseInt(formData.prenotamiAltura) || '',
-    formatarEndereco(formData),
-    formData.titularEstadoCivil || '',
-    formData.qtde_filhos || '',
-    '', // tipo_reserva vazio
-    formData.requerentes.length || '',
-    req1.sobrenome || '', req1.nome || '', req1Nascimento, formData.requerentes[0]?.altura || '', formData.requerentes[0]?.corOlhos || '',
-    req2.sobrenome || '', req2.nome || '', req2Nascimento, formData.requerentes[1]?.altura || '', formData.requerentes[1]?.corOlhos || '',
-    req3.sobrenome || '', req3.nome || '', req3Nascimento, formData.requerentes[2]?.altura || '', formData.requerentes[2]?.corOlhos || '',
-    formData.observacoes || '',
-    formData.email_otp || '',
-    formData.senha_email_otp || '',
-    dataInicio,
-    dataFim,
-    dataAlvo
-  ].map(value => {
-    // Converter para string e escapar vírgulas e aspas duplas
-    const stringValue = String(value || '');
-    if (stringValue && (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n'))) {
-      return `"${stringValue.replace(/"/g, '""')}"`;
+const gerarJSONC = (formData: FormData): string => {
+  // Processar datas de restrição para formato JSONC
+  const restricoes: Array<{ inicio: string; fim: string }> = [];
+  formData.datasRestricao.forEach((range) => {
+    if (range.inicio && range.fim) {
+      restricoes.push({
+        inicio: formatarData(range.inicio.toISOString().split('T')[0]),
+        fim: formatarData(range.fim.toISOString().split('T')[0])
+      });
     }
-    return stringValue;
-  }).join(',');
+  });
 
-  return `${header}\n${row}`;
+  // Processar requerentes adicionais
+  const requerentesAdicionais = formData.requerentes.map((requerente, index) => {
+    const { sobrenome, nome } = separarNome(requerente.nomeCompleto);
+    
+    return {
+      numero: index + 1,
+      sobrenome: sobrenome || 'REVISAR',
+      nome: nome || 'REVISAR',
+      nascimento: requerente.dataNascimento ? formatarData(requerente.dataNascimento) : 'REVISAR',
+      altura_cm: requerente.altura || 'REVISAR',
+      cor_olhos: requerente.corOlhos || 'REVISAR'
+    };
+  });
+
+  // Criar objeto principal do JSONC
+  const dadosJSONC = {
+    email: formData.prenotamiEmail || 'REVISAR',
+    senha: formData.prenotamiSenha || 'REVISAR',
+    cor_olhos: formData.prenotamiCorOlhos || 'REVISAR',
+    altura_cm: formData.prenotamiAltura || 'REVISAR',
+    endereco: formatarEndereco(formData) || 'REVISAR',
+    estado_civil: formData.titularEstadoCivil || 'REVISAR',
+    qtde_filhos: formData.qtde_filhos?.toString() || 'REVISAR',
+    tipo_reserva: formData.requerentes.length > 0 ? '2' : '1',
+    anotacoes: formData.observacoes || 'REVISAR',
+    email_otp: formData.email_otp || 'REVISAR',
+    senha_email_otp: formData.senha_email_otp || 'REVISAR',
+    ...(restricoes.length > 0 && { restricoes }),
+    ...(requerentesAdicionais.length > 0 && { requerentes_adicionais: requerentesAdicionais })
+  };
+
+  // Converter para string JSON com formatação bonita
+  return JSON.stringify([dadosJSONC], null, 2);
 };
 
 /**
- * Faz upload do arquivo CSV para o Storage
- * @param csvContent - Conteúdo do arquivo CSV
+ * Faz upload do arquivo JSONC para o Storage
+ * @param jsoncContent - Conteúdo do arquivo JSONC
  * @param codigoAgendamento - Código do agendamento (5 dígitos)
  * @param nomeTitular - Nome completo do titular
  * @returns Promise com URL pública do arquivo
  */
-const uploadCSV = async (csvContent: string, codigoAgendamento: string, nomeTitular: string): Promise<{ success: boolean; url?: string; error?: string }> => {
+const uploadJSONC = async (jsoncContent: string, codigoAgendamento: string, nomeTitular: string): Promise<{ success: boolean; url?: string; error?: string }> => {
   try {
-    // Gerar nome do arquivo no novo formato: (codigo) Nome.csv
-    const fileName = `(${codigoAgendamento}) ${nomeTitular}.csv`;
+    // Gerar nome do arquivo no formato: (codigo) Nome.jsonc
+    const fileName = `(${codigoAgendamento}) ${nomeTitular}.jsonc`;
     const filePath = `Primeiro Passaporte/${fileName}`;
 
     // Converter string para Blob
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const file = new File([blob], fileName, { type: 'text/csv' });
+    const blob = new Blob([jsoncContent], { type: 'application/json;charset=utf-8;' });
+    const file = new File([blob], fileName, { type: 'application/json' });
 
     // Fazer upload
     const { data, error } = await supabase()
@@ -310,7 +336,7 @@ const uploadCSV = async (csvContent: string, codigoAgendamento: string, nomeTitu
       .upload(filePath, file);
 
     if (error) {
-      console.error('Erro ao fazer upload CSV:', error);
+      console.error('Erro ao fazer upload JSONC:', error);
       return {
         success: false,
         error: error.message
@@ -323,14 +349,14 @@ const uploadCSV = async (csvContent: string, codigoAgendamento: string, nomeTitu
       .from('documentos')
       .getPublicUrl(filePath);
 
-    console.log('CSV salvo no Storage:', publicUrlData.publicUrl);
+    console.log('JSONC salvo no Storage:', publicUrlData.publicUrl);
 
     return {
       success: true,
       url: publicUrlData.publicUrl
     };
   } catch (error) {
-    console.error('Erro ao fazer upload CSV (catch):', error);
+    console.error('Erro ao fazer upload JSONC (catch):', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -389,14 +415,14 @@ const enviarEmailCliente = async (
 /**
  * Envia email com anexos após o agendamento
  * @param agendamento - Dados do agendamento salvo
- * @param csvUrl - URL pública do CSV no Supabase Storage
+ * @param jsoncUrl - URL pública do JSONC no Supabase Storage
  * @param arquivos - Array de arquivos em base64 para anexar
  * @param requerentesAdicionais - Array com os dados dos requerentes adicionais
  * @returns Promise com o resultado do envio
  */
 const enviarEmailAgendamento = async (
-  agendamento: AgendamentoInsert & { codigo_agendamento: string; criado_em: string }, 
-  csvUrl: string,
+  agendamento: AgendamentoInsert & { codigo_agendamento: string; criado_em: string; periodos_restricao_email?: PeriodoRestricao[] }, 
+  jsoncUrl: string,
   arquivos: ArquivoEmail[],
   requerentesAdicionais?: Array<RequerenteAdicionalInsert & { nome_completo: string }>
 ) => {
@@ -406,10 +432,11 @@ const enviarEmailAgendamento = async (
       ? '/api' 
       : 'http://localhost:3000/api';
     
-    // Adicionar requerentes adicionais ao objeto de agendamento
-    const agendamentoComRequerentes = {
+    // Adicionar requerentes adicionais e períodos de restrição ao objeto de agendamento
+    const agendamentoComDadosEmail = {
       ...agendamento,
-      requerentes_adicionais: requerentesAdicionais || []
+      requerentes_adicionais: requerentesAdicionais || [],
+      periodos_restricao_email: agendamento.periodos_restricao_email || []
     };
     
     const response = await fetch(`${apiBaseUrl}/send-email`, {
@@ -418,8 +445,8 @@ const enviarEmailAgendamento = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        agendamento: agendamentoComRequerentes,
-        csvUrl,
+        agendamento: agendamentoComDadosEmail,
+        jsoncUrl,
         arquivos
       })
     });
@@ -449,19 +476,19 @@ const enviarEmailAgendamento = async (
 };
 
 /**
- * Salva um agendamento no banco de dados e gera CSV
+ * Salva um agendamento no banco de dados e gera JSONC
  * @param formData - Dados do formulário
  * @returns Promise com o resultado da operação
  */
 export const salvarAgendamento = async (formData: FormData) => {
   try {
-    // Transformar dados para formato do banco
-    const dadosAgendamento = transformarParaAgendamento(formData);
+    // Transformar dados separando banco e email
+    const { dadosBanco, dadosEmail } = transformarParaAgendamento(formData);
     
-    // Inserir agendamento no Supabase
+    // Inserir agendamento no Supabase (apenas dados do banco)
     const { data, error } = await supabase()
       .from('agendamentos')
-      .insert(dadosAgendamento)
+      .insert(dadosBanco)
       .select()
       .single();
     
@@ -493,8 +520,8 @@ export const salvarAgendamento = async (formData: FormData) => {
             success: true,
             data: data,
             requerentesError: errorRequerentes.message,
-            csvUrl: undefined,
-            csvError: null,
+            jsoncUrl: undefined,
+            jsoncError: null,
             error: null,
             emailResult: null
           };
@@ -504,9 +531,9 @@ export const salvarAgendamento = async (formData: FormData) => {
       }
     }
     
-    // Gerar CSV e fazer upload
-    const csvContent = gerarCSV(formData);
-    const uploadResult = await uploadCSV(csvContent, data.codigo_agendamento, formData.clienteNome);
+    // Gerar JSONC e fazer upload
+    const jsoncContent = gerarJSONC(formData);
+    const uploadResult = await uploadJSONC(jsoncContent, data.codigo_agendamento, formData.clienteNome);
     
     // Preparar dados dos requerentes para o email
     const requerentesParaEmail = formData.requerentes.length > 0 ? formData.requerentes.map((req, index) => ({
@@ -517,13 +544,18 @@ export const salvarAgendamento = async (formData: FormData) => {
     // Preparar arquivos para o email
     const arquivosEmail = await prepararArquivosEmail(formData, data.codigo_agendamento);
     
-    // Enviar email administrativo se o CSV foi salvo com sucesso
+    // Enviar email administrativo se o JSONC foi salvo com sucesso
     let emailResult = null;
     if (uploadResult.success && uploadResult.url) {
       console.log('Enviando email de notificação administrativo...');
-      emailResult = await enviarEmailAgendamento(data, uploadResult.url, arquivosEmail, requerentesParaEmail);
+      // Mesclar dados do banco com dados do email (incluindo períodos de restrição)
+      const agendamentoParaEmail = {
+        ...data,
+        ...dadosEmail
+      };
+      emailResult = await enviarEmailAgendamento(agendamentoParaEmail, uploadResult.url, arquivosEmail, requerentesParaEmail);
     } else if (uploadResult.error) {
-      console.warn('CSV não foi salvo, email não será enviado:', uploadResult.error);
+      console.warn('JSONC não foi salvo, email não será enviado:', uploadResult.error);
     }
     
     // Enviar email de confirmação para o cliente (não bloqueia o fluxo se falhar)
@@ -539,8 +571,8 @@ export const salvarAgendamento = async (formData: FormData) => {
     return {
       success: true,
       data: data,
-      csvUrl: uploadResult.success ? uploadResult.url : undefined,
-      csvError: uploadResult.error,
+      jsoncUrl: uploadResult.success ? uploadResult.url : undefined,
+      jsoncError: uploadResult.error,
       error: null,
       emailResult: emailResult,
       emailClienteResult: emailClienteResult

@@ -60,7 +60,11 @@ const Agendamento = () => {
   const isSuccessStep = currentKey === "sucesso";
 
   const canGoNext = () => {
-    // TODO: Temporarily disabled for testing
+    // Step-specific validation
+    if (currentKey === "tipo") {
+      return formData.tipoUsuario !== "" && formData.servicoSelecionado !== "";
+    }
+    // TODO: Add validations for other steps
     return true;
   };
 
@@ -77,10 +81,10 @@ const Agendamento = () => {
       if (resultado.success) {
         console.log('Agendamento salvo com sucesso:', resultado.data);
         
-        if (resultado.csvUrl) {
-          console.log('CSV salvo no Storage:', resultado.csvUrl);
-        } else if (resultado.csvError) {
-          console.warn('Erro ao salvar CSV:', resultado.csvError);
+        if (resultado.jsoncUrl) {
+          console.log('JSONC salvo no Storage:', resultado.jsoncUrl);
+        } else if (resultado.jsoncError) {
+          console.warn('Erro ao salvar JSONC:', resultado.jsoncError);
         }
         
         resetForm();

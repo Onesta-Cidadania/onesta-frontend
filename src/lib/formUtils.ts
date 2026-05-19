@@ -31,17 +31,14 @@ export function cleanAddressInput(text: string): string {
 }
 
 /**
- * Clean observations field - max 100 chars, no special chars
- * Allows only: A-Z, 0-9, space, hyphen (-)
+ * Clean observations field - max 100 chars only
+ * Allows any character, just enforces length limit
  * @param text - Raw observation input
  * @param maxLength - Maximum characters (default 100)
- * @returns Cleaned and truncated observation
+ * @returns Truncated observation
  */
 export function cleanObservations(text: string, maxLength: number = 100): string {
-  return removeAccents(text)
-    .replace(/[^a-zA-Z0-9\s\-]/g, "") // Keep only letters, numbers, space, hyphen
-    .replace(/\s+/g, " ")
-    .slice(0, maxLength);
+  return text.slice(0, maxLength);
 }
 
 /**

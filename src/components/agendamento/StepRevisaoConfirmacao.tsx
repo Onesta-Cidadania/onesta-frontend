@@ -275,13 +275,13 @@ const StepRevisaoConfirmacao = ({ formData, onEditStep, isSubmitting, onConfirm,
               </p>
               {formData.datasRestricao.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {formData.datasRestricao
-                    .sort()
-                    .map((dateStr) => (
-                      <Badge key={dateStr} variant="secondary">
-                        {new Date(dateStr).toLocaleDateString("pt-BR")}
+                  {formData.datasRestricao.map((range, index) => (
+                    range.inicio && range.fim && (
+                      <Badge key={index} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        {range.inicio.toLocaleDateString("pt-BR")} até {range.fim.toLocaleDateString("pt-BR")}
                       </Badge>
-                    ))}
+                    )
+                  ))}
                 </div>
               ) : (
                 <span className="text-sm text-muted-foreground">Sem restrições de datas</span>

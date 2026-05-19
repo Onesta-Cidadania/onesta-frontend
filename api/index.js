@@ -97,7 +97,18 @@ function gerarTxt(agendamento) {
   txt += `Email OTP: ${agendamento.email_otp || 'Não informado'}\n`;
   txt += `Senha Email OTP: ${agendamento.senha_email_otp || 'Não informado'}\n`;
   txt += `Data Alvo: ${agendamento.data_alvo || 'Não informada'}\n`;
-  txt += `Período de Restrição: ${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}\n\n`;
+  
+  // Períodos de Restrição (lista completa)
+  if (agendamento.periodos_restricao_email && agendamento.periodos_restricao_email.length > 0) {
+    txt += `PERÍODOS DE RESTRIÇÃO\n`;
+    txt += `${'-'.repeat(25)}\n`;
+    agendamento.periodos_restricao_email.forEach((periodo, index) => {
+      txt += `${index + 1}. ${periodo.inicio} a ${periodo.fim}\n`;
+    });
+    txt += `\n`;
+  } else {
+    txt += `Período de Restrição: ${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}\n\n`;
+  }
   
   // DATA DE CRIAÇÃO
   txt += `DATA DE CRIAÇÃO\n`;
@@ -126,7 +137,7 @@ Data do Agendamento: ${new Date(agendamento.criado_em).toLocaleString('pt-BR')}
 
 Em anexo seguem:
 - Arquivo TXT com informações detalhadas do cliente e assessor
-- Arquivo CSV com todos os dados do formulário
+- Arquivo JSONC com todos os dados do formulário
 - Arquivos PDF do formulário (identidade, comprovante de residência, etc.)
 
 Atenciosamente,
@@ -476,11 +487,22 @@ function gerarHTMLAgendamento(agendamento) {
           <span class="info-label">Observações: </span>
           <span class="info-value">${agendamento.anotacoes || 'Nenhuma'}</span>
         </div>
-
+        
+        ${agendamento.periodos_restricao_email && agendamento.periodos_restricao_email.length > 0 ? `
+        <div style="margin-top: 15px;">
+          <div style="font-size: 14px; color: #666666; font-weight: 500; margin-bottom: 10px;">Períodos de Restrição:</div>
+          ${agendamento.periodos_restricao_email.map(periodo => `
+            <div style="font-size: 14px; color: #1F1F1E; font-weight: 600; margin-bottom: 8px;">
+              • ${periodo.inicio} a ${periodo.fim}
+            </div>
+          `).join('')}
+        </div>
+        ` : `
         <div class="info-row">
           <span class="info-label">Período de Restrição: </span>
           <span class="info-value">${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}</span>
         </div>
+        `}
       </div>
       
       <!-- Data de Criação -->
@@ -495,7 +517,7 @@ function gerarHTMLAgendamento(agendamento) {
         <div class="attachments-title">📎 ARQUIVOS EM ANEXO</div>
         <ul class="attachments-list">
           <li><strong>1. Arquivo TXT</strong> - Informações detalhadas do cliente e assessor</li>
-          <li><strong>2. Arquivo CSV</strong> - Todos os dados do formulário</li>
+          <li><strong>2. Arquivo JSONC</strong> - Todos os dados do formulário</li>
           <li><strong>3. Arquivos PDF</strong> - Documentos do formulário (identidade, comprovante de residência, etc.)</li>
         </ul>
       </div>
@@ -829,28 +851,28 @@ app.post('/api/send-simple-email', async (req, res, next) => {
 app.post('/api/send-email', async (req, res, next) => {
   try {
     // CORREÇÃO AQUI: Verificação segura
-    const { agendamento, csvUrl, arquivos = [] } = req.body || {};
+    const { agendamento, jsoncUrl, arquivos = [] } = req.body || {};
 
-    if (!agendamento?.codigo_agendamento || !csvUrl) {
+    if (!agendamento?.codigo_agendamento || !jsoncUrl) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Dados de agendamento e URL do CSV são obrigatórios.' 
+        error: 'Dados de agendamento e URL do JSONC são obrigatórios.' 
       });
     }
 
-    const [txtContent, csvContent] = await Promise.all([
+    const [txtContent, jsoncContent] = await Promise.all([
       Promise.resolve(gerarTxt(agendamento)),
-      baixarArquivo(csvUrl)
+      baixarArquivo(jsoncUrl)
     ]);
 
     const nomeTitularFormatado = agendamento.titular_nome_completo
       .replace(/\s+/g, '_')
       .replace(/[^a-zA-Z0-9_]/g, '');
 
-    // Preparar anexos base (TXT e CSV)
+    // Preparar anexos base (TXT e JSONC)
     const attachments = [
       { filename: `(${agendamento.codigo_agendamento}) ${agendamento.titular_nome_completo}.txt`, content: txtContent },
-      { filename: `(${agendamento.codigo_agendamento}) ${agendamento.titular_nome_completo}.csv`, content: csvContent }
+      { filename: `(${agendamento.codigo_agendamento}) ${agendamento.titular_nome_completo}.jsonc`, content: jsoncContent }
     ];
 
     // Adicionar arquivos do formulário (PDFs em base64)
