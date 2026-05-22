@@ -110,8 +110,8 @@ function gerarTxt(agendamento) {
     txt += `Período de Restrição: ${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}\n\n`;
   }
   
-  // DATA DE CRIAÇÃO
-  txt += `DATA DE CRIAÇÃO\n`;
+  // DATA DE SOLICITAÇÃO
+  txt += `DATA DE SOLICITAÇÃO\n`;
   txt += `${'-'.repeat(20)}\n`;
   txt += `${agendamento.criado_em}\n\n`;
   
@@ -382,7 +382,7 @@ function gerarHTMLConfirmacaoCliente(agendamento) {
       </p>
       
       <div class="info-box">
-        <div class="info-box-title">📋 O que acontece agora?</div>
+        <div class="info-box-title">📋 &nbsp;&nbsp; O que acontece agora?</div>
         <p>• Sua solicitação está sendo analisada por nossa equipe especializada</p>
         <p>• Você receberá atualizações sobre o andamento do seu processo</p>
         <p>• Se necessário, entraremos em contato por email ou telefone</p>
@@ -402,8 +402,7 @@ function gerarHTMLConfirmacaoCliente(agendamento) {
       <div class="footer-divider"></div>
       <p class="footer-text">
         Este email confirma o recebimento do seu agendamento.<br>
-        Data de confirmação: ${dataFormatada}<br><br>
-        Por favor, não responda a este email.
+        Data de solicitação: ${dataFormatada}<br><br>
       </p>
     </div>
   </div>
@@ -546,7 +545,7 @@ function gerarHTMLAgendamento(agendamento) {
       margin-bottom: 15px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
     
     .section-card-assessor .section-title {
@@ -560,7 +559,7 @@ function gerarHTMLAgendamento(agendamento) {
     /* Info Rows */
     .info-row {
       display: flex;
-      justify-content: space-between;
+      align-items: baseline;
       padding: 8px 0;
       border-bottom: 1px solid #e5e5e5;
       font-size: 14px;
@@ -572,15 +571,12 @@ function gerarHTMLAgendamento(agendamento) {
     
     .info-label {
       color: #666666;
-      font-weight: 500;
-      flex: 1;
+      font-weight: 700;
     }
     
     .info-value {
       color: #1F1F1E;
-      font-weight: 600;
-      flex: 2;
-      text-align: right;
+      font-weight: 400;
     }
     
     /* Attachments Section */
@@ -664,11 +660,7 @@ function gerarHTMLAgendamento(agendamento) {
       
       .info-row {
         flex-direction: column;
-        gap: 5px;
-      }
-      
-      .info-value {
-        text-align: left;
+        gap: 2px;
       }
     }
   </style>
@@ -698,22 +690,19 @@ function gerarHTMLAgendamento(agendamento) {
       <!-- Dados do Assessor -->
       <div class="section-card section-card-assessor">
         <div class="section-title">
-          🤝 DADOS DO ASSESSOR
+          🤝 &nbsp;&nbsp; DADOS DO ASSESSOR
         </div>
         
         <div class="info-row">
-          <span class="info-label">Nome: </span>
-          <span class="info-value">${agendamento.assessor_nome_completo}</span>
+          <span class="info-label">Nome:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.assessor_nome_completo}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Email: </span>
-          <span class="info-value">${agendamento.assessor_email}</span>
+          <span class="info-label">Email:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.assessor_email}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Telefone: </span>
-          <span class="info-value">${agendamento.assessor_telefone}</span>
+          <span class="info-label">Telefone:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.assessor_telefone}</span>
         </div>
       </div>
       ` : ''}
@@ -721,68 +710,62 @@ function gerarHTMLAgendamento(agendamento) {
       <!-- Dados do Cliente -->
       <div class="section-card">
         <div class="section-title">
-          👤 DADOS DO CLIENTE
+          👤 &nbsp;&nbsp; DADOS DO CLIENTE
         </div>
         
         <div class="info-row">
-          <span class="info-label">Nome Completo: </span>
-          <span class="info-value">${agendamento.titular_nome_completo}</span>
+          <span class="info-label">Nome Completo:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_nome_completo}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Email: </span>
-          <span class="info-value">${agendamento.titular_email}</span>
+          <span class="info-label">Email:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_email}</span>
         </div>
     
         <div class="info-row">
-          <span class="info-label">Endereço: </span>
-          <span class="info-value">${agendamento.titular_endereco}</span>
+          <span class="info-label">Endereço:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_endereco}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Quantidade de Filhos: </span>
-          <span class="info-value">${agendamento.titular_qtde_filhos}</span>
+          <span class="info-label">Quantidade de Filhos:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_qtde_filhos}</span>
         </div>
       </div>
       
       <!-- Informações Adicionais -->
       <div class="section-card section-card-info">
         <div class="section-title">
-          📋 INFORMAÇÕES ADICIONAIS
+          📋 &nbsp;&nbsp; INFORMAÇÕES ADICIONAIS
         </div>
         
         <div class="info-row">
-          <span class="info-label">Observações: </span>
-          <span class="info-value">${agendamento.anotacoes || 'Nenhuma'}</span>
+          <span class="info-label">Observações:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.anotacoes || 'Nenhuma'}</span>
         </div>
         
         ${agendamento.periodos_restricao_email && agendamento.periodos_restricao_email.length > 0 ? `
         <div style="margin-top: 15px;">
-          <div style="font-size: 14px; color: #666666; font-weight: 500; margin-bottom: 10px;">Períodos de Restrição:</div>
+          <div style="font-size: 14px; color: #666666; font-weight: 700; margin-bottom: 10px;">Períodos de Restrição:</div>
           ${agendamento.periodos_restricao_email.map(periodo => `
-            <div style="font-size: 14px; color: #1F1F1E; font-weight: 600; margin-bottom: 8px;">
+            <div style="font-size: 14px; color: #1F1F1E; font-weight: 400; margin-bottom: 8px;">
               • ${periodo.inicio} a ${periodo.fim}
             </div>
           `).join('')}
         </div>
         ` : `
         <div class="info-row">
-          <span class="info-label">Período de Restrição: </span>
-          <span class="info-value">${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}</span>
+          <span class="info-label">Período de Restrição:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}</span>
         </div>
         `}
       </div>
       
-      <!-- Data de Criação -->
+      <!-- Data de Solicitação -->
       <div style="text-align: center; margin: 30px 0 20px 0;">
         <p style="font-size: 14px; color: #666666;">
-          📅 <strong>Data de Criação:</strong> ${dataFormatada}
+          📅 &nbsp;&nbsp; <strong>Data de Solicitação:</strong> ${dataFormatada}
         </p>
       </div>
       
       <!-- Anexos -->
       <div class="attachments">
-        <div class="attachments-title">📎 ARQUIVOS EM ANEXO</div>
+        <div class="attachments-title">📎 &nbsp;&nbsp; ARQUIVOS EM ANEXO</div>
         <ul class="attachments-list">
           <li><strong>1. Arquivo TXT</strong> - Informações detalhadas do cliente e assessor</li>
           <li><strong>2. Arquivo JSONC</strong> - Todos os dados do formulário</li>
@@ -800,7 +783,6 @@ function gerarHTMLAgendamento(agendamento) {
       <div class="footer-divider"></div>
       <p class="footer-text">
         Este email foi gerado automaticamente pelo sistema Onesta.<br>
-        Por favor, não responda a este email.
       </p>
     </div>
   </div>
@@ -941,7 +923,7 @@ Agradecemos pela confiança em escolher a Onesta para esta jornada tão importan
 
 Data de confirmação: ${new Date(agendamento.criado_em).toLocaleString('pt-BR')}
 
-Por favor, não responda a este email.`,
+`,
       html: gerarHTMLConfirmacaoCliente(agendamento)
     };
 

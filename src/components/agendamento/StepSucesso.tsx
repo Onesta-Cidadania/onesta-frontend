@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, RotateCcw, Mail, MessageCircle, Clock } from "lucide-react";
+import {
+  CheckCircle2,
+  RotateCcw,
+  Mail,
+  MessageCircle,
+  Clock,
+} from "lucide-react";
 
 interface Props {
   onReset: () => void;
@@ -18,10 +24,12 @@ const StepSucesso = ({ onReset }: Props) => (
     {/* Success message */}
     <div className="space-y-3 max-w-md">
       <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-        Solicitação enviada com <span className="text-primary italic">sucesso!</span>
+        Solicitação enviada com{" "}
+        <span className="text-primary italic">sucesso!</span>
       </h2>
       <p className="text-muted-foreground">
-        Sua solicitação de agendamento foi recebida. Em breve entraremos em contato para confirmar os detalhes.
+        Sua solicitação de agendamento foi recebida. Em breve entraremos em
+        contato para confirmar os detalhes.
       </p>
     </div>
 
@@ -30,8 +38,12 @@ const StepSucesso = ({ onReset }: Props) => (
       <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
         <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
         <div className="text-left">
-          <p className="text-sm font-medium text-foreground">Prazo de resposta</p>
-          <p className="text-xs text-muted-foreground">Entraremos em contato em até 24 horas úteis</p>
+          <p className="text-sm font-medium text-foreground">
+            Prazo de resposta
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Entraremos em contato para os próximos passos
+          </p>
         </div>
       </div>
 
@@ -39,7 +51,9 @@ const StepSucesso = ({ onReset }: Props) => (
         <Mail className="h-5 w-5 text-primary shrink-0 mt-0.5" />
         <div className="text-left">
           <p className="text-sm font-medium text-foreground">Email</p>
-          <p className="text-xs text-muted-foreground">Verifique sua caixa de entrada e spam</p>
+          <p className="text-xs text-muted-foreground">
+            Verifique sua caixa de entrada e spam
+          </p>
         </div>
       </div>
 
@@ -47,7 +61,9 @@ const StepSucesso = ({ onReset }: Props) => (
         <MessageCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
         <div className="text-left">
           <p className="text-sm font-medium text-foreground">WhatsApp</p>
-          <p className="text-xs text-muted-foreground">Também podemos entrar contato pelo WhatsApp</p>
+          <p className="text-xs text-muted-foreground">
+            Também podemos entrar contato pelo WhatsApp
+          </p>
         </div>
       </div>
     </div>
@@ -58,16 +74,17 @@ const StepSucesso = ({ onReset }: Props) => (
         <RotateCcw className="h-4 w-4" />
         Nova solicitação
       </Button>
+
       <Button
         variant="cta"
-        asChild
         className="gap-2 flex-1"
-        onClick={() => window.location.href = "/"}
+        onClick={() => {
+          onReset();
+          window.location.href = "/";
+        }}
       >
-        <a>
-          Voltar ao site
-          <MessageCircle className="h-4 w-4" />
-        </a>
+        Voltar ao Site
+        <MessageCircle className="h-4 w-4" />
       </Button>
     </div>
   </div>
