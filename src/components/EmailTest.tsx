@@ -58,8 +58,10 @@ export const EmailTest = () => {
         email_otp: "", // Código OTP temporário
         senha_email_otp: "",
         data_alvo: "", // Data desejada para o agendamento
-        data_inicio_restricao: "2026-04-01", // Data em que começa a restrição
-        data_fim_restricao: "2026-04-30", // Data em que termina a restrição
+        periodos_restricao: [
+          { inicio: "01/04/2026", fim: "30/04/2026" },
+          { inicio: "01/06/2026", fim: "15/06/2026" }
+        ],
         criado_em: new Date().toISOString(),
       };
 

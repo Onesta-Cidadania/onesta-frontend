@@ -116,8 +116,8 @@ export interface Agendamento {
   // Campos do Bot
   email_otp: string | null;
   senha_email_otp: string | null;
-  data_inicio_restricao: string | null;
-  data_fim_restricao: string | null;
+  // Períodos de restrição (JSONB com múltiplos ranges)
+  periodos_restricao: Array<{ inicio: string; fim: string }> | null;
   data_alvo: string | null;
   // Timestamp
   criado_em: string;

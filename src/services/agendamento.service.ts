@@ -122,44 +122,22 @@ interface PeriodoRestricao {
 }
 
 /**
- * Interface para dados separados (banco e email)
- */
-interface DadosAgendamentoSeparados {
-  dadosBanco: AgendamentoInsert;
-  dadosEmail: { periodos_restricao_email?: PeriodoRestricao[] };
-}
-
-/**
- * Transforma dados do formulário para formato do banco de dados e email
+ * Transforma dados do formulário para formato do banco de dados
  * @param formData - Dados do formulário
- * @returns Objeto com dados separados para banco e email
+ * @returns Objeto com dados para o banco (incluindo periodos_restricao como JSONB)
  */
-const transformarParaAgendamento = (formData: FormData): DadosAgendamentoSeparados => {
-    // Processar datas de restrição (apenas o primeiro período para o banco)
-    const dataInicio = formData.datasRestricao[0]?.inicio 
-      ? formatarData(formData.datasRestricao[0].inicio.toISOString().split('T')[0]) 
-      : null;
-    const dataFim = formData.datasRestricao[0]?.fim 
-      ? formatarData(formData.datasRestricao[0].fim.toISOString().split('T')[0]) 
-      : null;
-    const dataAlvo = formData.data_alvo ? formatarData(formData.data_alvo) : null;
-
-    // Processar lista completa de períodos de restrição para o email
-    const periodosRestricaoEmail: PeriodoRestricao[] = formData.datasRestricao
+const transformarParaAgendamento = (formData: FormData): AgendamentoInsert => {
+    // Processar todos os períodos de restrição para o banco (JSONB)
+    const periodosRestricao: Array<{ inicio: string; fim: string }> = formData.datasRestricao
       .filter(range => range.inicio && range.fim)
       .map(range => ({
-        inicio: formatarData(range.inicio.toISOString().split('T')[0]),
-        fim: formatarData(range.fim.toISOString().split('T')[0])
+        inicio: formatarData(range.inicio!.toISOString().split('T')[0]),
+        fim: formatarData(range.fim!.toISOString().split('T')[0])
       }));
 
-  // Verifica se há assessor (pelo menos um campo preenchido)
-  const possuiAssessor = !!(
-    formData.assessorNome || 
-    formData.assessorEmail || 
-    formData.assessorTelefone
-  );
+    const dataAlvo = formData.data_alvo ? formatarData(formData.data_alvo) : null;
 
-  // Dados para o banco de dados (apenas campos que existem na tabela)
+  // Dados para o banco de dados (incluindo periodos_restricao JSONB)
   const dadosBanco: AgendamentoInsert = {
     // Dados do Titular (com prefixo titular_)
     titular_nome_completo: formData.clienteNome || '',
@@ -180,20 +158,12 @@ const transformarParaAgendamento = (formData: FormData): DadosAgendamentoSeparad
     anotacoes: formData.observacoes || null,
     email_otp: formData.email_otp || null,
     senha_email_otp: formData.senha_email_otp || null,
-    data_inicio_restricao: dataInicio,
-    data_fim_restricao: dataFim,
+    // Períodos de restrição (JSONB - suporta múltiplos ranges)
+    periodos_restricao: periodosRestricao.length > 0 ? periodosRestricao : null,
     data_alvo: dataAlvo,
   };
 
-  // Dados adicionais para o email (não salvos no banco)
-  const dadosEmail = {
-    periodos_restricao_email: periodosRestricaoEmail.length > 0 ? periodosRestricaoEmail : undefined,
-  };
-
-  return {
-    dadosBanco,
-    dadosEmail
-  };
+  return dadosBanco;
 };
 
 /**
@@ -482,10 +452,10 @@ const enviarEmailAgendamento = async (
  */
 export const salvarAgendamento = async (formData: FormData) => {
   try {
-    // Transformar dados separando banco e email
-    const { dadosBanco, dadosEmail } = transformarParaAgendamento(formData);
+    // Transformar dados do formulário para o banco
+    const dadosBanco = transformarParaAgendamento(formData);
     
-    // Inserir agendamento no Supabase (apenas dados do banco)
+    // Inserir agendamento no Supabase
     const { data, error } = await supabase()
       .from('agendamentos')
       .insert(dadosBanco)
@@ -545,15 +515,15 @@ export const salvarAgendamento = async (formData: FormData) => {
     const arquivosEmail = await prepararArquivosEmail(formData, data.codigo_agendamento);
     
     // Enviar email administrativo se o JSONC foi salvo com sucesso
-    let emailResult = null;
-    if (uploadResult.success && uploadResult.url) {
-      console.log('Enviando email de notificação administrativo...');
-      // Mesclar dados do banco com dados do email (incluindo períodos de restrição)
-      const agendamentoParaEmail = {
-        ...data,
-        ...dadosEmail
-      };
-      emailResult = await enviarEmailAgendamento(agendamentoParaEmail, uploadResult.url, arquivosEmail, requerentesParaEmail);
+      let emailResult = null;
+      if (uploadResult.success && uploadResult.url) {
+        console.log('Enviando email de notificação administrativo...');
+        // Mapear periodos_restricao do banco para o formato esperado pelo email
+        const agendamentoParaEmail = {
+          ...data,
+          periodos_restricao_email: data.periodos_restricao || []
+        };
+        emailResult = await enviarEmailAgendamento(agendamentoParaEmail, uploadResult.url, arquivosEmail, requerentesParaEmail);
     } else if (uploadResult.error) {
       console.warn('JSONC não foi salvo, email não será enviado:', uploadResult.error);
     }

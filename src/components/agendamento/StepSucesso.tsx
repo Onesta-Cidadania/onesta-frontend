@@ -79,8 +79,8 @@ const StepSucesso = ({ onReset }: Props) => (
         variant="cta"
         className="gap-2 flex-1"
         onClick={() => {
-          onReset();
           window.location.href = "/";
+          /* onReset(); </div> */
         }}
       >
         Voltar ao Site
