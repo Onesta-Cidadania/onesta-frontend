@@ -22,9 +22,11 @@ import StepObservacoes from "@/components/agendamento/StepObservacoes";
 import StepRevisaoConfirmacao from "@/components/agendamento/StepRevisaoConfirmacao";
 import StepSucesso from "@/components/agendamento/StepSucesso";
 import StepIndicator from "@/components/agendamento/StepIndicator";
+import { validateRequired, validateEmail, validatePhone } from "@/lib/validations";
 
 const Agendamento = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [assessorErrors, setAssessorErrors] = useState<Record<string, string>>({});
 
   const isLocalEnvironment = import.meta.env.DEV;
 
@@ -63,6 +65,10 @@ const Agendamento = () => {
     // Step-specific validation
     if (currentKey === "tipo") {
       return formData.tipoUsuario !== "" && formData.servicoSelecionado !== "";
+    }
+    if (currentKey === "assessor") {
+      const allFilled = formData.assessorNome?.trim() && formData.assessorEmail?.trim() && formData.assessorTelefone?.trim();
+      return !!allFilled && Object.keys(assessorErrors).length === 0;
     }
     // TODO: Add validations for other steps
     return true;
@@ -105,6 +111,40 @@ const Agendamento = () => {
     }
   }, [formData, totalSteps]);
 
+  const validateAssessorField = (field: string) => {
+    setAssessorErrors((prev) => {
+      const next = { ...prev };
+
+      if (field === "assessorNome") {
+        const error = validateRequired(formData.assessorNome || "", "nome");
+        if (error) next.assessorNome = error;
+        else delete next.assessorNome;
+      }
+
+      if (field === "assessorEmail") {
+        const error = validateEmail(formData.assessorEmail || "");
+        if (error) next.assessorEmail = error;
+        else delete next.assessorEmail;
+      }
+
+      if (field === "assessorTelefone") {
+        const error = validatePhone(formData.assessorTelefone || "");
+        if (error) next.assessorTelefone = error;
+        else delete next.assessorTelefone;
+      }
+
+      return next;
+    });
+  };
+
+  const clearAssessorError = (field: string) => {
+    setAssessorErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleNext = () => {
     if (currentKey === "revisao") {
       handleSubmit();
@@ -133,7 +173,15 @@ const Agendamento = () => {
           />
         );
       case "assessor":
-        return <StepDadosAssessor formData={formData} updateField={updateField} />;
+        return (
+          <StepDadosAssessor
+            formData={formData}
+            updateField={updateField}
+            errors={assessorErrors}
+            onClearError={clearAssessorError}
+            onValidateField={validateAssessorField}
+          />
+        );
       case "titular":
         return (
           <StepDadosTitular

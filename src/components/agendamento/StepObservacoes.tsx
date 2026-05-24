@@ -21,25 +21,27 @@ interface Props {
   maxLength?: number;
 }
 
-  const StepObservacoes = ({
-    value,
-    onChange,
-    datasRestricao,
-    onChangeDatasRestricao,
-    maxLength = 100,
-  }: Props) => {
-    const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>();
-    const [hoverDate, setHoverDate] = React.useState<Date | undefined>();
+const StepObservacoes = ({
+  value,
+  onChange,
+  datasRestricao,
+  onChangeDatasRestricao,
+  maxLength = 100,
+}: Props) => {
+  const [selectedRange, setSelectedRange] = React.useState<
+    DateRange | undefined
+  >();
+  const [hoverDate, setHoverDate] = React.useState<Date | undefined>();
 
   // Calendar handlers
   const handleSelect = (range: DateRange | undefined) => {
     setSelectedRange(range);
-    
+
     if (range && range.from && range.to) {
       // Cria um novo range e adiciona à lista
       const novoRange: DateRangeRestricao = {
         inicio: range.from,
-        fim: range.to
+        fim: range.to,
       };
       onChangeDatasRestricao([...datasRestricao, novoRange]);
       // Limpa a seleção atual
@@ -53,7 +55,7 @@ interface Props {
     if (selectedRange?.from && hoverDate) {
       const from = selectedRange.from;
       const to = hoverDate;
-      
+
       // Ordena as datas para garantir que from <= to
       if (from <= to) {
         return { from, to };
@@ -69,18 +71,24 @@ interface Props {
     const dates: Date[] = [];
     const startDateCopy = new Date(startDate);
     const endDateCopy = new Date(endDate);
-    
-    for (let d = new Date(startDateCopy); d <= endDateCopy; d.setDate(d.getDate() + 1)) {
+
+    for (
+      let d = new Date(startDateCopy);
+      d <= endDateCopy;
+      d.setDate(d.getDate() + 1)
+    ) {
       dates.push(new Date(d));
     }
-    
+
     return dates;
   };
 
   const previewRange = getPreviewRange();
 
   const removeRange = (indexToRemove: number) => {
-    onChangeDatasRestricao(datasRestricao.filter((_, index) => index !== indexToRemove));
+    onChangeDatasRestricao(
+      datasRestricao.filter((_, index) => index !== indexToRemove),
+    );
   };
 
   // Textarea handlers
@@ -109,20 +117,21 @@ interface Props {
         <div className="mb-4 pb-3 border-b border-border">
           <h3 className="font-semibold text-base">Observações Adicionais</h3>
           <p className="text-xs text-muted-foreground">
-            Outras informações que deseja compartilhar
+            Caso tenha informações importantes a serem comunicadas ao consulado,
+            descreva-as de forma clara e objetiva.
           </p>
         </div>
 
         {/* Textarea */}
         <div className="space-y-3">
-          <Label htmlFor="observacoes" className="text-sm font-medium">
+          {/* <Label htmlFor="observacoes" className="text-sm font-medium">
             Observações
-          </Label>
+          </Label> */}
           <Textarea
             id="observacoes"
             value={value}
             onChange={handleChange}
-            placeholder="Ex: Prefiro horarios pela manha ou: Necessidade de acessibilidade"
+            placeholder="Ex: Necessidade de acessibilidade, restrição médica ou preferência de horário"
             rows={4}
             className="resize-none"
             maxLength={maxLength}
@@ -130,9 +139,6 @@ interface Props {
 
           {/* Character Counter */}
           <div className="flex items-start justify-between gap-4">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Caso tenha informações importantes a serem comunicadas ao consulado, descreva-as de forma clara e objetiva.
-            </p>
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {currentLength} / {maxLength} caracteres
             </span>
@@ -142,10 +148,16 @@ interface Props {
 
       {/* Card 1: Restrições de Datas */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <div className="mb-4 pb-3 border-b border-border">
-          <h3 className="font-semibold text-base">Datas de Restrição</h3>
+        <h3 className="font-semibold text-base">Datas de Restrição</h3>
+        <div className="pb-3 mt-2">
           <p className="text-xs text-muted-foreground">
             Selecione os períodos em que você NÃO pode comparecer
+          </p>
+        </div>
+        <div className="mb-4 pb-3 border-b border-border">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Selecione um período clicando na data inicial e depois na data
+            final, você pode adicionar múltiplos períodos.
           </p>
         </div>
 
@@ -161,25 +173,28 @@ interface Props {
             locale={ptBR}
             modifiers={{
               hover: hoverDate ? [hoverDate] : [],
-              preview: previewRange ? 
-                getDatesInRange(previewRange.from!, previewRange.to!) : []
+              preview: previewRange
+                ? getDatesInRange(previewRange.from!, previewRange.to!)
+                : [],
             }}
             modifiersStyles={{
               hover: {
-                backgroundColor: 'hsl(var(--destructive) / 0.2)',
-                border: '2px solid hsl(var(--destructive))',
+                backgroundColor: "hsl(var(--destructive) / 0.2)",
+                border: "2px solid hsl(var(--destructive))",
               },
               preview: {
-                backgroundColor: 'hsl(var(--destructive) / 0.15)',
-              }
+                backgroundColor: "hsl(var(--destructive) / 0.15)",
+              },
             }}
             modifiersClassNames={{
-              selected: 'bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground',
+              selected:
+                "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground",
             }}
             classNames={{
               day_selected:
                 "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground",
-              day_range_middle: "aria-selected:bg-destructive/20 aria-selected:text-destructive-foreground",
+              day_range_middle:
+                "aria-selected:bg-destructive/20 aria-selected:text-destructive-foreground",
               day_today: "font-bold text-destructive",
             }}
             onDayMouseEnter={(date) => {
@@ -200,44 +215,50 @@ interface Props {
               Períodos de restrição ({datasRestricao.length})
             </Label>
             <div className="flex flex-wrap gap-2">
-              {datasRestricao.map((range, index) => (
-                range.inicio && range.fim && (
-                  <Badge key={index} className="gap-1 pr-1 bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    {range.inicio.toLocaleDateString("pt-BR")} até {range.fim.toLocaleDateString("pt-BR")}
-                    <button
-                      type="button"
-                      onClick={() => removeRange(index)}
-                      className="ml-1 rounded-full hover:bg-destructive/20 p-0.5"
+              {datasRestricao.map(
+                (range, index) =>
+                  range.inicio &&
+                  range.fim && (
+                    <Badge
+                      key={index}
+                      className="gap-1 pr-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )
-              ))}
+                      {range.inicio.toLocaleDateString("pt-BR")} até{" "}
+                      {range.fim.toLocaleDateString("pt-BR")}
+                      <button
+                        type="button"
+                        onClick={() => removeRange(index)}
+                        className="ml-1 rounded-full hover:bg-destructive/20 p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ),
+              )}
             </div>
           </div>
         )}
 
         {/* Helper text */}
-        <div className="rounded-lg border border-border bg-muted/30 p-4 mt-4">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="font-medium text-foreground">Dica:</span> Selecione um período clicando na data inicial e depois na data final. 
-            O sistema adicionará automaticamente o período à lista. Você pode adicionar múltiplos períodos.
-          </p>
-        </div>
+        {/* <div className="rounded-lg border border-border bg-muted/30 p-4 mt-4"> */}
+          {/* <p className="text-xs text-muted-foreground leading-relaxed">
+            <span className="font-medium text-foreground">Dica:</span> Selecione
+            um período clicando na data inicial e depois na data final. O
+            sistema adicionará automaticamente o período à lista. Você pode
+            adicionar múltiplos períodos.
+          </p> */}
+        {/* </div> */}
 
         {/* Empty state hint */}
         {datasRestricao.length === 0 && (
           <div className="text-center py-4">
             <p className="text-sm text-muted-foreground">
-              Você pode selecionar períodos de restrição clicando no calendário acima ou deixar vazio
-              se não tiver restrições.
+              Você pode selecionar períodos de restrição clicando no calendário
+              acima ou deixar vazio se não tiver restrições.
             </p>
           </div>
         )}
       </div>
-
-
     </div>
   );
 };

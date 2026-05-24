@@ -1,12 +1,20 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import type { FormData } from "@/hooks/useLocalStorageForm";
 
 interface Props {
   formData: FormData;
   updateField: <K extends keyof FormData>(field: K, value: FormData[K]) => void;
+  errors?: Record<string, string>;
+  onClearError?: (field: string) => void;
+  onValidateField?: (field: string) => void;
 }
 
 // Função para aplicar máscara de telefone
@@ -24,7 +32,7 @@ const maskPhone = (value: string): string => {
   }
 };
 
-const StepDadosAssessor = ({ formData, updateField }: Props) => (
+const StepDadosAssessor = ({ formData, updateField, errors = {}, onClearError, onValidateField }: Props) => (
   <TooltipProvider>
     <div className="space-y-8">
       {/* Header */}
@@ -58,10 +66,17 @@ const StepDadosAssessor = ({ formData, updateField }: Props) => (
             id="assessorNome"
             type="text"
             value={formData.assessorNome}
-            onChange={(e) => updateField("assessorNome", e.target.value)}
+            onChange={(e) => {
+              updateField("assessorNome", e.target.value);
+              if (errors.assessorNome) onClearError?.("assessorNome");
+            }}
+            onBlur={() => onValidateField?.("assessorNome")}
             placeholder="Ex: João Silva - Turismo Brasil"
-            className="h-11"
+            className={`h-11 ${errors.assessorNome ? "border-destructive focus-visible:ring-destructive" : ""}`}
           />
+          {errors.assessorNome && (
+            <p className="text-sm text-destructive mt-1">{errors.assessorNome}</p>
+          )}
         </div>
 
         {/* Email */}
@@ -83,10 +98,17 @@ const StepDadosAssessor = ({ formData, updateField }: Props) => (
             id="assessorEmail"
             type="email"
             value={formData.assessorEmail}
-            onChange={(e) => updateField("assessorEmail", e.target.value)}
+            onChange={(e) => {
+              updateField("assessorEmail", e.target.value);
+              if (errors.assessorEmail) onClearError?.("assessorEmail");
+            }}
+            onBlur={() => onValidateField?.("assessorEmail")}
             placeholder="Ex: joao.silva@gmail.com"
-            className="h-11"
+            className={`h-11 ${errors.assessorEmail ? "border-destructive focus-visible:ring-destructive" : ""}`}
           />
+          {errors.assessorEmail && (
+            <p className="text-sm text-destructive mt-1">{errors.assessorEmail}</p>
+          )}
         </div>
 
         {/* Telefone */}
@@ -95,16 +117,31 @@ const StepDadosAssessor = ({ formData, updateField }: Props) => (
             <Label htmlFor="assessorTelefone" className="text-sm font-medium">
               Telefone
             </Label>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Telefone para contato profissional</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <Input
             id="assessorTelefone"
             type="tel"
             value={formData.assessorTelefone}
-            onChange={(e) => updateField("assessorTelefone", maskPhone(e.target.value))}
+            onChange={(e) => {
+              updateField("assessorTelefone", maskPhone(e.target.value));
+              if (errors.assessorTelefone) onClearError?.("assessorTelefone");
+            }}
+            onBlur={() => onValidateField?.("assessorTelefone")}
             placeholder="Ex: (11) 98765-4321"
-            className="h-11"
+            className={`h-11 ${errors.assessorTelefone ? "border-destructive focus-visible:ring-destructive" : ""}`}
             maxLength={15}
           />
+          {errors.assessorTelefone && (
+            <p className="text-sm text-destructive mt-1">{errors.assessorTelefone}</p>
+          )}
         </div>
       </div>
     </div>
