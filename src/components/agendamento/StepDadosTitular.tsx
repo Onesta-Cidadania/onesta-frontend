@@ -76,7 +76,7 @@ const StepDadosTitular = ({
   const [isFetchingAddress, setIsFetchingAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
   
-  const { shouldShowField, isRequiredField } = useConfiguracaoServico();
+  const { shouldShowField, isRequiredField } = useConfiguracaoServico(servicoSelecionado);
 
   const handleCepChange = async (value: string) => {
     updateField("titularCep", value);
@@ -361,12 +361,12 @@ const StepDadosTitular = ({
         </div>
 
         {/* Estado Civil - Campo Dinâmico */}
-        {shouldShowField(servicoSelecionado, 'titular', 'estadoCivil') && (
+        {shouldShowField('titular', 'estadoCivil') && (
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <Label htmlFor="titularEstadoCivil" className="text-sm font-medium">
                 Estado Civil
-                {isRequiredField(servicoSelecionado, 'titular', 'estadoCivil') && (
+                {isRequiredField('titular', 'estadoCivil') && (
                   <span className="text-red-500 ml-1">*</span>
                 )}
               </Label>
@@ -387,12 +387,12 @@ const StepDadosTitular = ({
         )}
 
                 {/* Altura - Campo Dinâmico */}
-        {shouldShowField(servicoSelecionado, 'titular', 'altura') && (
+        {shouldShowField('titular', 'altura') && (
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <Label htmlFor="prenotamiAltura" className="text-sm font-medium">
                 Altura
-                {isRequiredField(servicoSelecionado, 'titular', 'altura') && (
+                {isRequiredField('titular', 'altura') && (
                   <span className="text-red-500 ml-1">*</span>
                 )}
               </Label>
@@ -418,12 +418,12 @@ const StepDadosTitular = ({
         )}
 
         {/* Cor dos Olhos - Campo Dinâmico */}
-        {shouldShowField(servicoSelecionado, 'titular', 'corOlhos') && (
+        {shouldShowField('titular', 'corOlhos') && (
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <Label htmlFor="prenotamiCorOlhos" className="text-sm font-medium">
                 Cor dos olhos
-                {isRequiredField(servicoSelecionado, 'titular', 'corOlhos') && (
+                {isRequiredField('titular', 'corOlhos') && (
                   <span className="text-red-500 ml-1">*</span>
                 )}
               </Label>
@@ -452,9 +452,9 @@ const StepDadosTitular = ({
         )}
 
         {/* Documento de Identidade - Campo Dinâmico */}
-        {shouldShowField(servicoSelecionado, 'titular', 'documentoIdentidade') && (
+        {shouldShowField('titular', 'documentoIdentidade') && (
           <PdfUpload
-            title={`Documento de Identidade (PDF)${isRequiredField(servicoSelecionado, 'titular', 'documentoIdentidade') ? '' : ' - Opcional'}`}
+            title={`Documento de Identidade (PDF)${isRequiredField('titular', 'documentoIdentidade') ? '' : ' - Opcional'}`}
             fileName={documentoIdentidade}
             onFileSelect={handleIdentidadeFileSelect}
             onFileRemove={handleIdentidadeFileRemove}
@@ -463,9 +463,9 @@ const StepDadosTitular = ({
         )}
 
         {/* Comprovante de Residência - Campo Dinâmico */}
-        {shouldShowField(servicoSelecionado, 'titular', 'comprovanteResidencia') && (
+        {shouldShowField('titular', 'comprovanteResidencia') && (
           <PdfUpload
-            title={`Comprovante de Residência (PDF)${isRequiredField(servicoSelecionado, 'titular', 'comprovanteResidencia') ? '' : ' - Opcional'}`}
+            title={`Comprovante de Residência (PDF)${isRequiredField('titular', 'comprovanteResidencia') ? '' : ' - Opcional'}`}
             fileName={pdfFile}
             onFileSelect={handlePdfFileSelect}
             onFileRemove={handlePdfFileRemove}

@@ -1,203 +1,215 @@
 /**
  * Hook para gerenciar configurações de campos dinâmicos de serviços
- * Carrega configurações do banco e fornece funções auxiliares
+ * Carrega a configuração sob demanda (lazy) apenas do serviço selecionado
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { getConfiguracoesCompletas } from '@/services/servicos.service';
-import type { Servico, ConfiguracaoServico, ConfiguracaoCampo } from '@/types/servicos';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { getConfiguracaoByCodigo } from '@/services/servicos.service';
+import type { ConfiguracaoServico, ConfiguracaoCampo } from '@/types/servicos';
 
 interface UseConfiguracaoServicoState {
-  configuracoes: ConfiguracaoServico[];
-  servicos: Servico[];
+  configuracao: ConfiguracaoServico | null;
   loading: boolean;
   error: string | null;
 }
 
+// Cache global simples para evitar re-buscar o mesmo serviço
+const configuracaoCache = new Map<string, ConfiguracaoServico>();
+
 /**
  * Hook para gerenciar configurações de campos dinâmicos
- * @returns Estado com configurações e funções auxiliares
+ * @param servicoCodigo - Código do serviço selecionado. Só carrega quando fornecido.
+ * @returns Estado com configuração e funções auxiliares
  * 
  * @example
  * ```tsx
- * const { servicos, shouldShowField, isRequiredField } = useConfiguracaoServico();
- * 
- * // Buscar serviços disponíveis
- * <Select>
- *   {servicos.map(servico => (
- *     <SelectItem key={servico.id} value={servico.codigo}>
- *       {servico.nome}
- *     </SelectItem>
- *   ))}
- * </Select>
+ * const { shouldShowField, isRequiredField, loading } = useConfiguracaoServico(servicoSelecionado);
  * 
  * // Verificar se campo deve ser exibido
- * {shouldShowField('sp-primeiro-passaporte', 'titular', 'estadoCivil') && (
+ * {shouldShowField('titular', 'estadoCivil') && (
  *   <CampoEstadoCivil />
  * )}
  * ```
  */
-export const useConfiguracaoServico = () => {
+export const useConfiguracaoServico = (servicoCodigo: string = '') => {
   const [state, setState] = useState<UseConfiguracaoServicoState>({
-    configuracoes: [],
-    servicos: [],
-    loading: true,
+    configuracao: null,
+    loading: false,
     error: null,
   });
 
-  // Carregar configurações ao montar
+  // Track the last loaded codigo to avoid stale updates
+  const lastLoadedCodigo = useRef<string>('');
+
+  // Carregar configuração quando o codigo mudar
   useEffect(() => {
-    const loadConfiguracoes = async () => {
+    if (!servicoCodigo) {
+      setState({ configuracao: null, loading: false, error: null });
+      lastLoadedCodigo.current = '';
+      return;
+    }
+
+    // Verificar cache primeiro
+    const cached = configuracaoCache.get(servicoCodigo);
+    if (cached) {
+      setState({ configuracao: cached, loading: false, error: null });
+      lastLoadedCodigo.current = servicoCodigo;
+      return;
+    }
+
+    const loadConfiguracao = async () => {
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
-        
-        const { data, error } = await getConfiguracoesCompletas();
 
-        if (error || !data) {
+        const { data: campos, error } = await getConfiguracaoByCodigo(servicoCodigo);
+
+        if (error || !campos) {
           throw new Error(error || 'Erro ao carregar configurações');
         }
 
-        const servicos = data.map((c) => c.servico);
+        // Buscar dados do serviço a partir dos campos (o servico_id está em cada campo)
+        const servicoId = campos[0]?.servico_id || '';
 
-        setState({
-          configuracoes: data,
-          servicos,
-          loading: false,
-          error: null,
-        });
+        const configuracao: ConfiguracaoServico = {
+          servico: {
+            id: servicoId,
+            codigo: servicoCodigo,
+            nome: '',
+            descricao: null,
+            ativo: true,
+            ordem: 0,
+            criado_em: '',
+            atualizado_em: '',
+          },
+          camposTitular: campos.filter(c => c.entidade === 'titular'),
+          camposRequerente: campos.filter(c => c.entidade === 'requerente'),
+        };
+
+        // Salvar no cache
+        configuracaoCache.set(servicoCodigo, configuracao);
+
+        // Só atualizar se ainda é o serviço atual
+        if (lastLoadedCodigo.current !== servicoCodigo || servicoCodigo === servicoCodigo) {
+          lastLoadedCodigo.current = servicoCodigo;
+          setState({
+            configuracao,
+            loading: false,
+            error: null,
+          });
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar configurações';
         console.error('Erro no useConfiguracaoServico:', errorMessage);
-        
+
         setState({
-          configuracoes: [],
-          servicos: [],
+          configuracao: null,
           loading: false,
           error: errorMessage,
         });
       }
     };
 
-    loadConfiguracoes();
-  }, []);
-
-  /**
-   * Busca configurações de um serviço pelo código
-   */
-  const getConfiguracaoByCodigo = useCallback((codigo: string): ConfiguracaoServico | null => {
-    return state.configuracoes.find((c) => c.servico.codigo === codigo) || null;
-  }, [state.configuracoes]);
+    loadConfiguracao();
+  }, [servicoCodigo]);
 
   /**
    * Verifica se um campo deve ser exibido
-   * @param codigo - Código do serviço
    * @param entidade - 'titular' ou 'requerente'
    * @param campo - Nome do campo
    * @returns true se o campo deve ser exibido, false caso contrário
    */
   const shouldShowField = useCallback((
-    codigo: string,
     entidade: 'titular' | 'requerente',
     campo: string
   ): boolean => {
-    const configuracao = getConfiguracaoByCodigo(codigo);
+    const configuracao = state.configuracao;
     if (!configuracao) return true; // Padrão: mostrar se não configurado
 
-    const campos = entidade === 'titular' 
-      ? configuracao.camposTitular 
+    const campos = entidade === 'titular'
+      ? configuracao.camposTitular
       : configuracao.camposRequerente;
 
     const campoConfig = campos.find((c) => c.campo === campo);
-    
+
     // Se não tiver configuração específica, mostra o campo (comportamento padrão)
     if (!campoConfig) return true;
 
     return campoConfig.exibir;
-  }, [getConfiguracaoByCodigo]);
+  }, [state.configuracao]);
 
   /**
    * Verifica se um campo é obrigatório
-   * @param codigo - Código do serviço
    * @param entidade - 'titular' ou 'requerente'
    * @param campo - Nome do campo
    * @returns true se o campo é obrigatório, false caso contrário
    */
   const isRequiredField = useCallback((
-    codigo: string,
     entidade: 'titular' | 'requerente',
     campo: string
   ): boolean => {
-    const configuracao = getConfiguracaoByCodigo(codigo);
+    const configuracao = state.configuracao;
     if (!configuracao) return false; // Padrão: não obrigatório se não configurado
 
-    const campos = entidade === 'titular' 
-      ? configuracao.camposTitular 
+    const campos = entidade === 'titular'
+      ? configuracao.camposTitular
       : configuracao.camposRequerente;
 
     const campoConfig = campos.find((c) => c.campo === campo);
-    
+
     // Se não tiver configuração específica, não é obrigatório (comportamento padrão)
     if (!campoConfig) return false;
 
     return campoConfig.obrigatorio;
-  }, [getConfiguracaoByCodigo]);
+  }, [state.configuracao]);
 
   /**
-   * Busca todos os campos de uma entidade para um serviço
-   * @param codigo - Código do serviço
+   * Busca todos os campos de uma entidade
    * @param entidade - 'titular' ou 'requerente'
    * @returns Lista de configurações de campos
    */
   const getFieldsByEntidade = useCallback((
-    codigo: string,
     entidade: 'titular' | 'requerente'
   ): ConfiguracaoCampo[] => {
-    const configuracao = getConfiguracaoByCodigo(codigo);
+    const configuracao = state.configuracao;
     if (!configuracao) return [];
 
-    return entidade === 'titular' 
-      ? configuracao.camposTitular 
+    return entidade === 'titular'
+      ? configuracao.camposTitular
       : configuracao.camposRequerente;
-  }, [getConfiguracaoByCodigo]);
+  }, [state.configuracao]);
 
   /**
-   * Busca campos visíveis de uma entidade para um serviço
-   * @param codigo - Código do serviço
+   * Busca campos visíveis de uma entidade
    * @param entidade - 'titular' ou 'requerente'
    * @returns Lista de campos que devem ser exibidos
    */
   const getVisibleFields = useCallback((
-    codigo: string,
     entidade: 'titular' | 'requerente'
   ): ConfiguracaoCampo[] => {
-    return getFieldsByEntidade(codigo, entidade)
+    return getFieldsByEntidade(entidade)
       .filter((c) => c.exibir)
       .sort((a, b) => a.ordem - b.ordem);
   }, [getFieldsByEntidade]);
 
   /**
-   * Busca campos obrigatórios de uma entidade para um serviço
-   * @param codigo - Código do serviço
+   * Busca campos obrigatórios de uma entidade
    * @param entidade - 'titular' ou 'requerente'
    * @returns Lista de campos que são obrigatórios
    */
   const getRequiredFields = useCallback((
-    codigo: string,
     entidade: 'titular' | 'requerente'
   ): ConfiguracaoCampo[] => {
-    return getFieldsByEntidade(codigo, entidade)
+    return getFieldsByEntidade(entidade)
       .filter((c) => c.exibir && c.obrigatorio)
       .sort((a, b) => a.ordem - b.ordem);
   }, [getFieldsByEntidade]);
 
   return {
-    configuracoes: state.configuracoes,
-    servicos: state.servicos,
+    configuracao: state.configuracao,
     loading: state.loading,
     error: state.error,
-    
+
     // Funções auxiliares
-    getConfiguracaoByCodigo,
     shouldShowField,
     isRequiredField,
     getFieldsByEntidade,

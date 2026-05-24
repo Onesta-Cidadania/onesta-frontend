@@ -2,7 +2,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Briefcase, MapPin } from "lucide-react";
-import { useConfiguracaoServico } from "@/hooks/useConfiguracaoServico";
+import { useServicos } from "@/hooks/useServicos";
 
 interface Props {
   value: string;
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const StepTipoUsuario = ({ value, onChange, servicoSelecionado, onServicoChange }: Props) => {
-  const { servicos, loading, error } = useConfiguracaoServico();
+  const { servicos, loading, error } = useServicos();
 
   return (
     <div className="space-y-8">

@@ -27,7 +27,7 @@ const eyeColors = [
 ] as const;
 
 const StepRequerentesAdicionais = ({ requerentes, updateRequerente, addRequerente, removeRequerente, servicoSelecionado }: Props) => {
-  const { shouldShowField, isRequiredField } = useConfiguracaoServico();
+  const { shouldShowField, isRequiredField } = useConfiguracaoServico(servicoSelecionado);
   // Empty state
   if (requerentes.length === 0) {
     return (
@@ -145,12 +145,12 @@ const StepRequerentesAdicionais = ({ requerentes, updateRequerente, addRequerent
               </div>
 
               {/* Data de Nascimento - Campo Dinâmico */}
-              {shouldShowField(servicoSelecionado, 'requerente', 'dataNascimento') && (
+              {shouldShowField('requerente', 'dataNascimento') && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
                     <Label htmlFor={`req-${idx}-nascimento`} className="text-sm font-medium">
                       Data de nascimento
-                      {isRequiredField(servicoSelecionado, 'requerente', 'dataNascimento') && (
+                      {isRequiredField('requerente', 'dataNascimento') && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </Label>
@@ -166,12 +166,12 @@ const StepRequerentesAdicionais = ({ requerentes, updateRequerente, addRequerent
               )}
 
               {/* Altura - Campo Dinâmico */}
-              {shouldShowField(servicoSelecionado, 'requerente', 'altura') && (
+              {shouldShowField('requerente', 'altura') && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
                     <Label htmlFor={`req-${idx}-altura`} className="text-sm font-medium">
                       Altura
-                      {isRequiredField(servicoSelecionado, 'requerente', 'altura') && (
+                      {isRequiredField('requerente', 'altura') && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </Label>
@@ -197,12 +197,12 @@ const StepRequerentesAdicionais = ({ requerentes, updateRequerente, addRequerent
               )}
 
               {/* Cor dos Olhos - Campo Dinâmico */}
-              {shouldShowField(servicoSelecionado, 'requerente', 'corOlhos') && (
+              {shouldShowField('requerente', 'corOlhos') && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
                     <Label htmlFor={`req-${idx}-cor-olhos`} className="text-sm font-medium">
                       Cor dos olhos
-                      {isRequiredField(servicoSelecionado, 'requerente', 'corOlhos') && (
+                      {isRequiredField('requerente', 'corOlhos') && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </Label>
@@ -236,9 +236,9 @@ const StepRequerentesAdicionais = ({ requerentes, updateRequerente, addRequerent
               )}
 
               {/* PDF Upload - Campo Dinâmico */}
-              {shouldShowField(servicoSelecionado, 'requerente', 'documentoIdentidade') && (
+              {shouldShowField('requerente', 'documentoIdentidade') && (
                 <PdfUpload
-                  title={`Documento de Identidade (PDF)${isRequiredField(servicoSelecionado, 'requerente', 'documentoIdentidade') ? '' : ' - Opcional'}`}
+                  title={`Documento de Identidade (PDF)${isRequiredField('requerente', 'documentoIdentidade') ? '' : ' - Opcional'}`}
                   fileName={requerente.documentoIdentidade}
                   onFileSelect={(file) => handleDocumentoFileSelect(idx, file)}
                   onFileRemove={() => handleDocumentoFileRemove(idx)}

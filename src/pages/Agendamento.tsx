@@ -87,15 +87,8 @@ const Agendamento = () => {
           console.warn('Erro ao salvar JSONC:', resultado.jsoncError);
         }
         
-        // Navigate to success step BEFORE resetting form data.
-        // If we call resetForm() first, tipoUsuario resets to "" which makes
-        // isAssessor = false, shrinking the steps array and causing the success
-        // step index to be out of bounds (blank screen).
         setCurrentStep(totalSteps - 1);
         
-        // Clear only localStorage so the draft is removed, but keep React state
-        // intact so the success step renders correctly. The full resetForm() will
-        // be called when the user clicks "Nova solicitação" on the success page.
         localStorage.removeItem("agendamento-draft");
         localStorage.removeItem("agendamento-draft-step");
       } else {
