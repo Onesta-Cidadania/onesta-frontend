@@ -34,7 +34,7 @@ const Hero = () => {
           {/* Headline */}
           <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-primary-foreground leading-tight mb-6 animate-fade-up opacity-0 delay-100">
             Realize o Sonho da{" "}
-            <span className="italic">Cidadania Italiana Teste</span>
+            <span className="italic">Cidadania Italiana</span>
           </h1>
 
           {/* Subheadline */}
