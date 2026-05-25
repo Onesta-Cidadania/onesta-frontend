@@ -51,7 +51,7 @@ const transporter = nodemailer.createTransport({
 // ======================================================
 
 function gerarTxt(agendamento) {
-  let txt = `AGENDAMENTO #${agendamento.codigo_agendamento}\n`;
+  let txt = `REQUERIMENTO #${agendamento.codigo_agendamento}\n`;
   txt += `${'='.repeat(30)}\n\n`;
   
   // DADOS DO ASSESSOR (primeiro, se houver)
@@ -96,7 +96,7 @@ function gerarTxt(agendamento) {
   txt += `Observações: ${agendamento.anotacoes || 'Nenhuma'}\n`;
   txt += `Email OTP: ${agendamento.email_otp || 'Não informado'}\n`;
   txt += `Senha Email OTP: ${agendamento.senha_email_otp || 'Não informado'}\n`;
-  txt += `Data Alvo: ${agendamento.data_alvo || 'Não informada'}\n`;
+  txt += `Data Alvo: ${agendamento.data_alvo || 'Não informada'}\n\n`;
   
   // Períodos de Restrição (lista completa)
   if (agendamento.periodos_restricao_email && agendamento.periodos_restricao_email.length > 0) {
@@ -110,10 +110,10 @@ function gerarTxt(agendamento) {
     txt += `Período de Restrição: ${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}\n\n`;
   }
   
-  // DATA DE SOLICITAÇÃO
-  txt += `DATA DE SOLICITAÇÃO\n`;
+  // DATA DE REQUERIMENTO
+  txt += `DATA DE REQUERIMENTO\n`;
   txt += `${'-'.repeat(20)}\n`;
-  txt += `${agendamento.criado_em}\n\n`;
+  txt += `${new Date(agendamento.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}\n\n`;
   
   txt += `Gerado automaticamente pelo sistema Onesta`;
 
@@ -124,24 +124,6 @@ async function baixarArquivo(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Falha ao baixar arquivo: ${response.statusText}`);
   return response.text();
-}
-
-function gerarCorpoEmail(agendamento) {
-  return `Olá!
-
-Um novo agendamento foi criado no sistema.
-
-Código do Agendamento: ${agendamento.codigo_agendamento}
-Nome do Cliente: ${agendamento.titular_nome_completo}
-Data do Agendamento: ${new Date(agendamento.criado_em).toLocaleString('pt-BR')}
-
-Em anexo seguem:
-- Arquivo TXT com informações detalhadas do cliente e assessor
-- Arquivo JSONC com todos os dados do formulário
-- Arquivos PDF do formulário (identidade, comprovante de residência, etc.)
-
-Atenciosamente,
-Equipe Onesta`;
 }
 
 function gerarHTMLAgendamento(agendamento) {
@@ -161,7 +143,7 @@ function gerarHTMLAgendamento(agendamento) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Novo Agendamento - ${agendamento.titular_nome_completo}</title>
+  <title>Novo Requerimento - ${agendamento.titular_nome_completo}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
     
@@ -401,77 +383,83 @@ function gerarHTMLAgendamento(agendamento) {
 <body>
   <div class="email-container">
     <!-- Header -->
-    <div class="header">
-      <div class="header-logo">ONESTA</div>
-      <div class="header-subtitle">SISTEMA DE AGENDAMENTO</div>
+    <div class="header" style="background-color:#315E33;padding:40px 30px;text-align:center;">
+      <div class="header-logo" style="font-family:Georgia,serif;font-size:36px;font-weight:700;color:#ffffff;letter-spacing:2px;margin-bottom:10px;">ONESTA</div>
+      <div class="header-subtitle" style="color:#ffffff;font-size:14px;letter-spacing:1px;">SISTEMA DE REQUERIMENTO</div>
     </div>
     
     <!-- Faixa Italiana -->
-    <div class="italian-stripe"></div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="33.33%" bgcolor="#315E33" style="background-color:#315E33;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.33%" bgcolor="#ffffff" style="background-color:#ffffff;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.34%" bgcolor="#903339" style="background-color:#903339;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+      </tr>
+    </table>
     
     <!-- Content -->
-    <div class="content">
-      <p class="greeting">
-        <strong>Olá!</strong> Um novo agendamento foi criado no sistema.
+    <div class="content" style="padding:40px 30px;background-color:#ffffff;">
+      <p class="greeting" style="font-size:18px;color:#1F1F1E;margin-bottom:20px;">
+        <strong style="font-weight:600;">Olá!</strong> Um novo requerimento foi criado no sistema.
       </p>
       
-      <div class="code-badge">
-        Agendamento #${agendamento.codigo_agendamento}
+      <div class="code-badge" style="display:inline-block;background-color:#03084C;color:#ffffff;padding:8px 20px;border-radius:6px;font-size:14px;font-weight:600;margin-bottom:30px;">
+        Requerimento #${agendamento.codigo_agendamento}
       </div>
 
       ${temAssessor ? `
       <!-- Dados do Assessor -->
-      <div class="section-card section-card-assessor">
-        <div class="section-title">
+      <div class="section-card section-card-assessor" style="background-color:#FAFAF8;border-radius:8px;padding:25px;margin-bottom:20px;border-left:4px solid #03084C;">
+        <div class="section-title" style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:#03084C;margin-bottom:15px;">
           🤝 &nbsp;&nbsp; DADOS DO ASSESSOR
         </div>
         
-        <div class="info-row">
-          <span class="info-label">Nome:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.assessor_nome_completo}</span>
+        <div style="padding:8px 0;border-bottom:1px solid #e5e5e5;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Nome:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.assessor_nome_completo}</span>
         </div>
         
-        <div class="info-row">
-          <span class="info-label">Email:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.assessor_email}</span>
+        <div style="padding:8px 0;border-bottom:1px solid #e5e5e5;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Email:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.assessor_email}</span>
         </div>
         
-        <div class="info-row">
-          <span class="info-label">Telefone:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.assessor_telefone}</span>
+        <div style="padding:8px 0;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Telefone:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.assessor_telefone}</span>
         </div>
       </div>
       ` : ''}
       
       <!-- Dados do Cliente -->
-      <div class="section-card">
-        <div class="section-title">
+      <div class="section-card" style="background-color:#FAFAF8;border-radius:8px;padding:25px;margin-bottom:20px;border-left:4px solid #315E33;">
+        <div class="section-title" style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:#315E33;margin-bottom:15px;">
           👤 &nbsp;&nbsp; DADOS DO CLIENTE
         </div>
         
-        <div class="info-row">
-          <span class="info-label">Nome Completo:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_nome_completo}</span>
+        <div style="padding:8px 0;border-bottom:1px solid #e5e5e5;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Nome Completo:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.titular_nome_completo}</span>
         </div>
         
-        <div class="info-row">
-          <span class="info-label">Email:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_email}</span>
+        <div style="padding:8px 0;border-bottom:1px solid #e5e5e5;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Email:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.titular_email}</span>
         </div>
     
-        <div class="info-row">
-          <span class="info-label">Endereço:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_endereco}</span>
+        <div style="padding:8px 0;border-bottom:1px solid #e5e5e5;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Endereço:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.titular_endereco}</span>
         </div>
         
-        <div class="info-row">
-          <span class="info-label">Quantidade de Filhos:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.titular_qtde_filhos}</span>
+        <div style="padding:8px 0;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Quantidade de Filhos:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.titular_qtde_filhos}</span>
         </div>
       </div>
       
       <!-- Informações Adicionais -->
-      <div class="section-card section-card-info">
-        <div class="section-title">
+      <div class="section-card section-card-info" style="background-color:#FAFAF8;border-radius:8px;padding:25px;margin-bottom:20px;border-left:4px solid #D4A574;">
+        <div class="section-title" style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:#903339;margin-bottom:15px;">
           📋 &nbsp;&nbsp; INFORMAÇÕES ADICIONAIS
         </div>
         
-        <div class="info-row">
-          <span class="info-label">Observações:</span>&nbsp;&nbsp;
-          <span class="info-value">${agendamento.anotacoes || 'Nenhuma'}</span>
+        <div style="padding:8px 0;border-bottom:1px solid #e5e5e5;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Observações:</span>&nbsp;&nbsp;
+          <span style="color:#1F1F1E;">${agendamento.anotacoes || 'Nenhuma'}</span>
         </div>
         
         ${agendamento.periodos_restricao_email && agendamento.periodos_restricao_email.length > 0 ? `
@@ -484,38 +472,45 @@ function gerarHTMLAgendamento(agendamento) {
           `).join('')}
         </div>
         ` : `
-        <div class="info-row">
-          <span class="info-label">Período de Restrição:</span>&nbsp;&nbsp;<span class="info-value">${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}</span>
+        <div style="padding:8px 0;font-size:14px;">
+          <span style="color:#666666;font-weight:700;">Período de Restrição:</span>&nbsp;&nbsp;<span style="color:#1F1F1E;">${agendamento.data_inicio_restricao || 'N/A'} a ${agendamento.data_fim_restricao || 'N/A'}</span>
         </div>
         `}
       </div>
       
-      <!-- Data de Solicitação -->
-      <div style="text-align: center; margin: 30px 0 20px 0;">
-        <p style="font-size: 14px; color: #666666;">
-          📅 &nbsp;&nbsp; <strong>Data de Solicitação:</strong> ${dataFormatada}
-        </p>
-      </div>
-      
       <!-- Anexos -->
-      <div class="attachments">
-        <div class="attachments-title">📎 &nbsp;&nbsp; ARQUIVOS EM ANEXO</div>
-        <ul class="attachments-list">
-          <li><strong>1. Arquivo TXT</strong> - Informações detalhadas do cliente e assessor</li>
-          <li><strong>2. Arquivo JSONC</strong> - Todos os dados do formulário</li>
-          <li><strong>3. Arquivos PDF</strong> - Documentos do formulário (identidade, comprovante de residência, etc.)</li>
+      <div class="attachments" style="background-color:#f0f7f1;border:2px dashed #315E33;border-radius:8px;padding:20px;text-align:center;margin:30px 0;">
+        <div class="attachments-title" style="font-family:Georgia,serif;font-size:16px;color:#315E33;margin-bottom:10px;">📎 &nbsp;&nbsp; ARQUIVOS EM ANEXO</div>
+        <ul class="attachments-list" style="font-size:14px;color:#666666;text-align:left;padding-left:20px;">
+          <li style="margin-bottom:8px;"><strong style="color:#315E33;">1. Arquivo TXT</strong> - Informações detalhadas do cliente e assessor</li>
+          <li style="margin-bottom:8px;"><strong style="color:#315E33;">2. Arquivo JSONC</strong> - Todos os dados do formulário</li>
+          <li style="margin-bottom:8px;"><strong style="color:#315E33;">3. Arquivos PDF</strong> - Documentos do formulário (identidade, comprovante de residência, etc.)</li>
         </ul>
       </div>
+
+      <!-- Data de Requerimento -->
+      <div style="text-align: center; margin: 30px 0 20px 0;">
+        <p style="font-size: 14px; color: #666666;">
+          📅 &nbsp;&nbsp; <strong>Data de Requerimento:</strong> ${dataFormatada}
+        </p>
+      </div>
+
     </div>
     
     <!-- Faixa Italiana -->
-    <div class="italian-stripe"></div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="33.33%" bgcolor="#315E33" style="background-color:#315E33;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.33%" bgcolor="#ffffff" style="background-color:#ffffff;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.34%" bgcolor="#903339" style="background-color:#903339;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+      </tr>
+    </table>
     
     <!-- Footer -->
-    <div class="footer">
-      <div class="footer-brand">ONESTA</div>
-      <div class="footer-divider"></div>
-      <p class="footer-text">
+    <div class="footer" style="background-color:#FAFAF8;padding:30px;text-align:center;border-top:1px solid #e5e5e5;">
+      <div class="footer-brand" style="font-family:Georgia,serif;font-size:18px;color:#315E33;margin-bottom:10px;">ONESTA</div>
+      <div class="footer-divider" style="width:50px;height:2px;background-color:#315E33;margin:15px auto;">&nbsp;</div>
+      <p class="footer-text" style="font-size:13px;color:#666666;line-height:1.8;">
         Este email foi gerado automaticamente pelo sistema Onesta.<br>
       </p>
     </div>
@@ -526,14 +521,6 @@ function gerarHTMLAgendamento(agendamento) {
 }
 
 function gerarHTMLConfirmacaoCliente(agendamento) {
-  const dataFormatada = new Date(agendamento.criado_em).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-
   const nomePrimeiro = agendamento.titular_nome_completo.split(' ')[0];
 
   return `
@@ -542,7 +529,7 @@ function gerarHTMLConfirmacaoCliente(agendamento) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agendamento Confirmado - ${agendamento.titular_nome_completo}</title>
+  <title>Requerimento Confirmado - ${agendamento.titular_nome_completo}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
     
@@ -618,12 +605,13 @@ function gerarHTMLConfirmacaoCliente(agendamento) {
       height: 80px;
       background: linear-gradient(135deg, #315E33 0%, #2a522b 100%);
       border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-block;
+      text-align: center;
+      line-height: 80px;
       margin-bottom: 25px;
       font-size: 40px;
       color: white;
+      vertical-align: middle;
     }
     
     .greeting {
@@ -737,55 +725,66 @@ function gerarHTMLConfirmacaoCliente(agendamento) {
 <body>
   <div class="email-container">
     <!-- Header -->
-    <div class="header">
-      <div class="header-logo">ONESTA</div>
-      <div class="header-subtitle">SISTEMA DE AGENDAMENTO</div>
+    <div class="header" style="background-color:#315E33;padding:40px 30px;text-align:center;">
+      <div class="header-logo" style="font-family:Georgia,serif;font-size:36px;font-weight:700;color:#ffffff;letter-spacing:2px;margin-bottom:10px;">ONESTA</div>
+      <div class="header-subtitle" style="color:#ffffff;font-size:14px;letter-spacing:1px;">SISTEMA DE REQUERIMENTO</div>
     </div>
     
     <!-- Faixa Italiana -->
-    <div class="italian-stripe"></div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="33.33%" bgcolor="#315E33" style="background-color:#315E33;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.33%" bgcolor="#ffffff" style="background-color:#ffffff;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.34%" bgcolor="#903339" style="background-color:#903339;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+      </tr>
+    </table>
     
     <!-- Content -->
-    <div class="content">
-      <div class="success-icon">✓</div>
+    <div class="content" style="padding:40px 30px;background-color:#ffffff;text-align:center;">
+      <div class="success-icon" style="width:80px;height:80px;background-color:#315E33;border-radius:50%;display:inline-block;text-align:center;line-height:80px;font-size:40px;color:#ffffff;margin-bottom:25px;vertical-align:middle;">✓</div>
       
-      <p class="greeting">Olá, ${nomePrimeiro}!</p>
+      <p class="greeting" style="font-size:24px;color:#1F1F1E;margin-bottom:10px;font-weight:600;">Olá, ${nomePrimeiro}!</p>
       
-      <p class="message">
-        Temos ótimas notícias! Seu agendamento para o passaporte italiano foi realizado <strong>com sucesso</strong>. 🎉
+      <p class="message" style="font-size:16px;color:#666666;margin-bottom:30px;line-height:1.8;">
+        Temos ótimas notícias! Seu requerimento para agendamento de passaporte italiano foi realizado <strong>com sucesso</strong>. 🎉
       </p>
       
-      <div class="code-badge">
-        Agendamento #${agendamento.codigo_agendamento}
+      <div class="code-badge" style="display:inline-block;background-color:#03084C;color:#ffffff;padding:12px 30px;border-radius:8px;font-size:18px;font-weight:600;margin-bottom:30px;letter-spacing:1px;">
+        Requerimento #${agendamento.codigo_agendamento}
       </div>
       
-      <p class="message">
-        Sua solicitação foi registrada em nosso sistema e nossa equipe já está trabalhando para processar seu agendamento.
+      <p class="message" style="font-size:16px;color:#666666;margin-bottom:30px;line-height:1.8;">
+        Seu requerimento foi registrado em nosso sistema e nossa equipe já está trabalhando para processar seu requerimento.
+        Em anexo segue arquivo TXT com informações detalhadas do seu requerimento
       </p>
       
-      <div class="info-box">
-        <div class="info-box-title">📋 &nbsp;&nbsp; O que acontece agora?</div>
-        <p>• Sua solicitação está sendo analisada por nossa equipe especializada</p>
-        <p>• Você receberá atualizações sobre o andamento do seu processo</p>
-        <p>• Se necessário, entraremos em contato por email ou telefone</p>
-        <p>• Mantenha seus dados atualizados para facilitar a comunicação</p>
+      <div class="info-box" style="background-color:#FAFAF8;border-radius:8px;padding:25px;margin:30px 0;border-left:4px solid #315E33;text-align:left;">
+        <div class="info-box-title" style="font-family:Georgia,serif;font-size:16px;font-weight:600;color:#315E33;margin-bottom:15px;">📋 &nbsp;&nbsp; O que acontece agora?</div>
+        <p style="font-size:14px;color:#666666;line-height:1.8;margin-bottom:10px;">• Seu requerimento está sendo analisado por nossa equipe especializada</p>
+        <p style="font-size:14px;color:#666666;line-height:1.8;margin-bottom:10px;">• Você receberá atualizações sobre o andamento do seu processo</p>
+        <p style="font-size:14px;color:#666666;line-height:1.8;">• Se necessário, entraremos em contato por email ou telefone</p>
       </div>
       
-      <p class="message" style="margin-top: 30px;">
+      <p class="message" style="font-size:16px;color:#666666;margin-bottom:30px;line-height:1.8;margin-top:30px;">
         Agradecemos pela confiança em escolher a Onesta para esta jornada tão importante em busca da sua cidadania italiana. 🇮🇹
       </p>
     </div>
     
     <!-- Faixa Italiana -->
-    <div class="italian-stripe"></div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="33.33%" bgcolor="#315E33" style="background-color:#315E33;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.33%" bgcolor="#ffffff" style="background-color:#ffffff;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td width="33.34%" bgcolor="#903339" style="background-color:#903339;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+      </tr>
+    </table>
     
     <!-- Footer -->
-    <div class="footer">
-      <div class="footer-brand">ONESTA</div>
-      <div class="footer-divider"></div>
-      <p class="footer-text">
-        Este email confirma o recebimento do seu agendamento.<br>
-        Data de Solicitação: ${dataFormatada}<br><br>
+    <div class="footer" style="background-color:#FAFAF8;padding:30px;text-align:center;border-top:1px solid #e5e5e5;">
+      <div class="footer-brand" style="font-family:Georgia,serif;font-size:18px;color:#315E33;margin-bottom:10px;">ONESTA</div>
+      <div class="footer-divider" style="width:50px;height:2px;background-color:#315E33;margin:15px auto;">&nbsp;</div>
+      <p class="footer-text" style="font-size:13px;color:#666666;line-height:1.8;">
+        Este email confirma o recebimento do seu requerimento.<br>
       </p>
     </div>
   </div>
@@ -878,8 +877,8 @@ app.post('/api/send-email', async (req, res, next) => {
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: process.env.EMAIL_DESTINO,
-      subject: `🎯 Novo Agendamento - ${agendamento.titular_nome_completo} - ${agendamento.codigo_agendamento}`,
-      text: gerarCorpoEmail(agendamento),
+      subject: `🎯 Novo Requerimento - ${agendamento.titular_nome_completo} - ${agendamento.codigo_agendamento}`,
+      // text: gerarCorpoEmail(agendamento),
       html: gerarHTMLAgendamento(agendamento),
       attachments
     };
@@ -907,27 +906,14 @@ app.post('/api/send-client-email', async (req, res, next) => {
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: agendamento.titular_email,
-      subject: `✅ Agendamento Confirmado - Seu Passaporte Italiano`,
-      text: `Olá, ${agendamento.titular_nome_completo}!
-
-Temos ótimas notícias! Seu agendamento para o passaporte italiano foi realizado com sucesso.
-
-Código do Agendamento: ${agendamento.codigo_agendamento}
-
-Sua solicitação foi registrada em nosso sistema e nossa equipe já está trabalhando para processar seu agendamento.
-
-O que acontece agora?
-• Sua solicitação está sendo analisada por nossa equipe especializada
-• Você receberá atualizações sobre o andamento do seu processo
-• Se necessário, entraremos em contato por email ou telefone
-• Mantenha seus dados atualizados para facilitar a comunicação
-
-Agradecemos pela confiança em escolher a Onesta para esta jornada tão importante em busca da sua cidadania italiana.
-
-Data de Solicitação: ${new Date(agendamento.criado_em).toLocaleString('pt-BR')}
-
-`,
-      html: gerarHTMLConfirmacaoCliente(agendamento)
+      subject: `✅ Requerimento cadastrado - Agendamento de Primeiro Passaporte - São Paulo`,
+      html: gerarHTMLConfirmacaoCliente(agendamento),
+      attachments: [
+        {
+          filename: `(${agendamento.codigo_agendamento}) ${agendamento.titular_nome_completo}.txt`,
+          content: gerarTxt(agendamento)
+        }
+      ]
     };
 
     const info = await transporter.sendMail(mailOptions);

@@ -24,11 +24,11 @@ const StepSucesso = ({ onReset }: Props) => (
     {/* Success message */}
     <div className="space-y-3 max-w-md">
       <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-        Solicitação enviada com{" "}
+        Requerimento enviado com{" "}
         <span className="text-primary italic">sucesso!</span>
       </h2>
       <p className="text-muted-foreground">
-        Sua solicitação de agendamento foi recebida. Em breve entraremos em
+        Seu requerimento de agendamento foi recebido. Em breve entraremos em
         contato para confirmar os detalhes.
       </p>
     </div>
@@ -72,7 +72,7 @@ const StepSucesso = ({ onReset }: Props) => (
     <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full max-w-sm">
       <Button onClick={onReset} variant="outline" className="gap-2 flex-1">
         <RotateCcw className="h-4 w-4" />
-        Nova solicitação
+        Novo requerimento
       </Button>
 
       <Button

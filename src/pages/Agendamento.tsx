@@ -259,11 +259,11 @@ const Agendamento = () => {
         <div className="section-container relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground leading-tight mb-4 pt-8">
-              Solicitação de <span className="italic">Agendamento</span>
+              Requerimento de <span className="italic">Agendamento</span>
             </h1>
 
             <p className="text-base md:text-lg text-primary-foreground/80 max-w-2xl mx-auto mb-4">
-              Preencha as informações abaixo para solicitar seu agendamento no Prenotami
+              Preencha as informações abaixo para abrir seu requerimento de agendamento no Prenotami
             </p>
 
             {isLocalEnvironment && !isSuccessStep && (

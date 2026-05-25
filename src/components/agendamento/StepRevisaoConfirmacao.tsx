@@ -307,7 +307,7 @@ const StepRevisaoConfirmacao = ({ formData, onEditStep, isSubmitting, onConfirm,
           className="mt-0.5"
         />
         <span className="text-sm font-medium leading-relaxed">
-          Confirmo que todas as informações estão corretas e desejo enviar a solicitação.
+          Confirmo que todas as informações estão corretas e desejo enviar o requerimento.
         </span>
       </label>
 
@@ -321,7 +321,7 @@ const StepRevisaoConfirmacao = ({ formData, onEditStep, isSubmitting, onConfirm,
         {isSubmitting ? (
           <>Enviando...</>
         ) : (
-          <>Enviar Solicitação</>
+          <>Enviar Requerimento</>
         )}
       </Button>
     </div>

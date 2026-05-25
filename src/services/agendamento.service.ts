@@ -529,10 +529,16 @@ export const salvarAgendamento = async (formData: FormData) => {
     }
     
     // Enviar email de confirmação para o cliente (não bloqueia o fluxo se falhar)
+    // Usar o mesmo objeto enriquecido que o email administrativo recebe
     let emailClienteResult = null;
     try {
       console.log('Enviando email de confirmação para o cliente...');
-      emailClienteResult = await enviarEmailCliente(data);
+      const agendamentoParaEmailCliente = {
+        ...data,
+        requerentes_adicionais: requerentesParaEmail || [],
+        periodos_restricao_email: data.periodos_restricao || []
+      };
+      emailClienteResult = await enviarEmailCliente(agendamentoParaEmailCliente);
     } catch (error) {
       console.error('Erro ao enviar email para cliente (não crítico):', error);
       // Não falhar o fluxo se o email do cliente falhar

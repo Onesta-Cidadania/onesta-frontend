@@ -38,7 +38,7 @@ const StepRequerentesAdicionais = ({ requerentes, updateRequerente, addRequerent
             Requerentes Adicionais
           </h2>
           <p className="text-base text-muted-foreground">
-            Adicione outros requerentes à solicitação (opcional)
+            Adicione outros requerentes ao requerimento (opcional)
           </p>
         </div>
 

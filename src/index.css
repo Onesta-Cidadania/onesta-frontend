@@ -278,9 +278,6 @@
 
   /* Stepper connector line gradient */
   .stepper-gradient {
-    background: linear-gradient(90deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--accent)) 100%
-    );
+    background: hsl(var(--accent));
   }
 }
