@@ -147,7 +147,7 @@ const transformarParaAgendamento = (formData: FormData): AgendamentoInsert => {
     titular_altura_cm: parseInt(formData.prenotamiAltura) || 0,
     titular_endereco: formatarEndereco(formData),
     titular_estado_civil: formData.titularEstadoCivil || '',
-    titular_qtde_filhos: formData.qtde_filhos || 0,
+    titular_qtde_filhos: formData.requerentes.length,
     
     // Dados do Assessor (opcionais)
     assessor_nome_completo: formData.assessorNome || null,
@@ -269,7 +269,7 @@ const gerarJSONC = (formData: FormData): string => {
     altura_cm: formData.prenotamiAltura || 'REVISAR',
     endereco: formatarEndereco(formData) || 'REVISAR',
     estado_civil: formData.titularEstadoCivil || 'REVISAR',
-    qtde_filhos: formData.qtde_filhos?.toString() || 'REVISAR',
+    qtde_filhos: formData.requerentes.length.toString(),
     tipo_reserva: formData.requerentes.length > 0 ? '2' : '1',
     anotacoes: formData.observacoes || 'REVISAR',
     email_otp: formData.email_otp || 'REVISAR',
