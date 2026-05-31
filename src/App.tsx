@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Agendamentos from "./pages/Agendamentos";
-import SupabaseTest from "./components/SupabaseTest";
+import Login from "./pages/Login";
+import RecuperarSenha from "./pages/RecuperarSenha";
+import NovaSenha from "./pages/NovaSenha";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +21,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+          <Route path="/nova-senha" element={<NovaSenha />} />
           <Route path="/agendamentos" element={<Agendamentos />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

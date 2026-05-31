@@ -73,7 +73,7 @@ const Header = () => {
           </nav>
 
           {/* CTA Button */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-3">
             <Button variant="cta" size="default" asChild>
               <a 
                 href="#contato" 
@@ -81,6 +81,11 @@ const Header = () => {
                 aria-label="Entrar em contato conosco"
               >
                 Fale Conosco
+              </a>
+            </Button>
+            <Button variant="default" size="default" asChild>
+              <a href="/login" aria-label="Acessar login">
+                Login
               </a>
             </Button>
           </div>
@@ -122,6 +127,11 @@ const Header = () => {
                   aria-label="Entrar em contato conosco"
                 >
                   Fale Conosco
+                </a>
+              </Button>
+              <Button variant="default" size="lg" asChild>
+                <a href="/login" aria-label="Acessar login">
+                  Login
                 </a>
               </Button>
             </div>
