@@ -57,9 +57,11 @@ const Hero = () => {
               <a href="#servicos">Conhecer Serviços</a>
             </Button>
             <Button variant="heroOutline" size="xl" asChild>
-              <a href="#parcerias">
-                Sou Assessor
-              </a>
+              <a href="#parcerias">Sou Assessor</a>
+            </Button>
+
+            <Button variant="heroOutline" size="xl" asChild>
+              <a href="/agendamento">Agendamentos</a>
             </Button>
           </div>
 
