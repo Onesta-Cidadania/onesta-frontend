@@ -46,6 +46,14 @@ const Agendamentos = () => {
       icon: FileText,
       url: "https://forms.gle/JzMgHRcyBpcgy3zL9",
       color: "from-orange-600 to-orange-700"
+    },
+    {
+      id: 6,
+      title: "Agendamento de Filhos Menores - Benefício de Lei - Curitiba",
+      description: "Para filhos menores de idade - Benefício de Lei em Curitiba",
+      icon: FileText,
+      url: "https://forms.gle/WXYHHc8udJnT77nn7",
+      color: "from-teal-600 to-teal-700"
     }
   ];
 
