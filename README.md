@@ -1,4 +1,4 @@
-# Onest Landing
+# Onest Landing Page
 
 Uma landing page moderna e responsiva desenvolvida para apresentar os serviços e produtos da Onest.
 
