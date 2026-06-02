@@ -1,7 +1,12 @@
-import { ArrowRight, FileText, MapPin, RefreshCw } from "lucide-react";
+import { ArrowRight, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase/client";
 
 const Agendamentos = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -53,10 +58,33 @@ const Agendamentos = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleLogout = async () => {
+    await supabase().auth.signOut();
+    navigate("/", { replace: true });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-section">
       {/* Italian Stripe */}
       <div className="italian-stripe w-full" />
+
+      <header className="border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="section-container flex h-16 items-center justify-between">
+          <a href="/" className="flex items-center gap-3" aria-label="Onestà Cidadania Italiana - Página Inicial">
+            <span className="font-serif text-xl md:text-2xl font-semibold text-foreground">
+              Onestà
+            </span>
+            <span className="hidden sm:inline text-muted-foreground text-sm">
+              Cidadania Italiana
+            </span>
+          </a>
+
+          <Button type="button" variant="outline" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
+        </div>
+      </header>
       
       <div className="section-container py-16 md:py-24">
         {/* Header */}
