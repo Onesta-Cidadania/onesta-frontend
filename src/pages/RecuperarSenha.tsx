@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/validation/email";
 
+const appUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, "");
+
 const RecuperarSenha = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -32,7 +34,7 @@ const RecuperarSenha = () => {
 
     try {
       const { error } = await supabase().auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/nova-senha`,
+        redirectTo: `${appUrl}/nova-senha`,
       });
 
       if (error) {
