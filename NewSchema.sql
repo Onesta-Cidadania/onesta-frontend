@@ -1,17 +1,20 @@
--- New Schema: advisors, clients, additional_applicants, form_services, field_configurations
+-- New Schema: partners, customers, additional_applicants, form_services, field_configurations
 -- Based on SchemaAtual.sql with requested modifications
 -- All table/column names in English
 
 -- ============================================================
--- 1. ADVISORS (Novo - extraído de agendamentos)
+-- 1. PARTNERS (Novo - extraído de agendamentos)
 -- ============================================================
-CREATE TABLE public.advisors (
+CREATE TABLE public.partners (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   full_name text NOT NULL,
   email text NOT NULL,
   phone text,
+  created_by text, -- Novo
+  updated_by text, -- Novo
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT advisors_pkey PRIMARY KEY (id)
+  updated_at timestamp with time zone NOT NULL DEFAULT now(), -- Novo
+  CONSTRAINT partners_pkey PRIMARY KEY (id)
 );
 
 -- ============================================================
@@ -29,11 +32,11 @@ CREATE TABLE public.form_services (
 );
 
 -- ============================================================
--- 3. CLIENTS (renomeado de agendamentos)
+-- 3. CUSTOMERS (renomeado de agendamentos)
 -- ============================================================
-CREATE TABLE public.clients (
+CREATE TABLE public.customers (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
-  booking_code text NOT NULL DEFAULT gerar_codigo_agendamento() UNIQUE,
+  customer_code text NOT NULL DEFAULT gerar_codigo_agendamento() UNIQUE,
   full_name text NOT NULL,
   email text NOT NULL,
   password text NOT NULL,
@@ -46,20 +49,22 @@ CREATE TABLE public.clients (
   email_otp text,
   otp_email_password text,
   restriction_periods jsonb DEFAULT '[]'::jsonb,
+  scheduled_at timestamp with time zone, -- Novo - data/hora em que o cliente foi agendado
+  reservation_date timestamp with time zone, -- Novo - data da reserva
   status text NOT NULL DEFAULT 'EM_ANALISE', -- Novo
   previous_status text, -- Novo
   pending_issues text, -- Novo
   last_attempt timestamp with time zone, -- Novo
-  advisor_id uuid NOT NULL, -- Novo
+  partner_id uuid NOT NULL, -- Novo
   service_id uuid NOT NULL, -- Novo
   created_by text, -- Novo
   updated_by text, -- Novo
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(), -- Novo
-  CONSTRAINT clients_pkey PRIMARY KEY (id),
-  CONSTRAINT clients_advisor_id_fkey FOREIGN KEY (advisor_id) REFERENCES public.advisors(id),
-  CONSTRAINT clients_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.form_services(id),
-  CONSTRAINT clients_unique_email_service_advisor UNIQUE (email, service_id, advisor_id) -- Novo
+  CONSTRAINT customers_pkey PRIMARY KEY (id),
+  CONSTRAINT customers_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.partners(id),
+  CONSTRAINT customers_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.form_services(id),
+  CONSTRAINT customers_unique_email_service_partner UNIQUE (email, service_id, partner_id) -- Novo
 );
 
 -- ============================================================
@@ -67,7 +72,7 @@ CREATE TABLE public.clients (
 -- ============================================================
 CREATE TABLE public.additional_applicants (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
-  client_id uuid NOT NULL,
+  customer_id uuid NOT NULL,
   last_name text NOT NULL,
   first_name text NOT NULL,
   birth_date text NOT NULL,
@@ -76,7 +81,7 @@ CREATE TABLE public.additional_applicants (
   sort_order integer NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT additional_applicants_pkey PRIMARY KEY (id),
-  CONSTRAINT additional_applicants_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id)
+  CONSTRAINT additional_applicants_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customers(id)
 );
 
 -- ============================================================
