@@ -3,9 +3,12 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase/client";
+import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
+import { clearAuthenticatedActivity } from "@/lib/auth/session-activity";
 
 const Agendamentos = () => {
   const navigate = useNavigate();
+  useAuthenticatedActivity();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -67,6 +70,7 @@ const Agendamentos = () => {
   };
 
   const handleLogout = async () => {
+    clearAuthenticatedActivity();
     await supabase().auth.signOut();
     navigate("/", { replace: true });
   };

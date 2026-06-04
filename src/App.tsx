@@ -9,6 +9,7 @@ import Agendamentos from "./pages/Agendamentos";
 import Login from "./pages/Login";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import NovaSenha from "./pages/NovaSenha";
+import SessionExpirationMonitor from "./components/SessionExpirationMonitor";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
       <Sonner />
       {/* <SupabaseTest /> */}
       <BrowserRouter>
+        <SessionExpirationMonitor />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
