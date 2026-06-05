@@ -1,4 +1,4 @@
-import { ArrowRight, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
+import { ArrowRight, FileText, LogOut, MapPin, RefreshCw, Users } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -91,10 +91,22 @@ const Agendamentos = () => {
             </span>
           </a>
 
-          <Button type="button" variant="outline" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/consulta-clientes")}
+              title="Consulta de Clientes"
+            >
+              <Users className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Clientes</span>
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </Button>
+          </div>
         </div>
       </header>
       

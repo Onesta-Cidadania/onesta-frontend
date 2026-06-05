@@ -15,6 +15,7 @@ import type {
   CustomerFilters,
   CustomerWithRelations,
   FormService,
+  UserRole,
 } from "@/lib/supabase/types";
 
 const ConsultaClientes = () => {
@@ -32,23 +33,26 @@ const ConsultaClientes = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
 
-  // TODO: Controle de acesso (descomentar quando user_roles estiver pronto)
-  // const [userRole, setUserRole] = useState<UserRole | null>(null);
-  //
-  // useEffect(() => {
-  //   const checkAccess = async () => {
-  //     const role = await customerService.getUserRole();
-  //     if (!role || role.role === 'customer') {
-  //       navigate('/agendamentos', { replace: true });
-  //       return;
-  //     }
-  //     setUserRole(role);
-  //   };
-  //   checkAccess();
-  // }, [navigate]);
+  // Controle de acesso - verifica role do usuário
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      const role = await customerService.getUserRole();
+      if (!role || role.role === 'customer') {
+        setAccessDenied(true);
+        navigate('/agendamentos', { replace: true });
+        return;
+      }
+      setUserRole(role);
+    };
+    checkAccess();
+  }, [navigate]);
 
   // Buscar serviços para o dropdown de filtros
   useEffect(() => {
+    if (!userRole) return;
     const loadServices = async () => {
       const result = await customerService.getFormServices();
       if (result.data) {
@@ -56,7 +60,7 @@ const ConsultaClientes = () => {
       }
     };
     loadServices();
-  }, []);
+  }, [userRole]);
 
   // Buscar clientes - recebe parâmetros diretamente (não lê do state)
   const fetchCustomers = useCallback(async (
@@ -83,10 +87,28 @@ const ConsultaClientes = () => {
     setIsLoading(false);
   }, []);
 
-  // Buscar ao montar
+  // Buscar ao montar (só depois que acesso foi confirmado)
   useEffect(() => {
-    fetchCustomers({}, page, pageSize);
-  }, [fetchCustomers, page, pageSize]);
+    if (userRole) {
+      fetchCustomers({}, page, pageSize);
+    }
+  }, [fetchCustomers, page, pageSize, userRole]);
+
+  // Enquanto verifica acesso, mostra loading
+  if (!accessDenied && userRole === null) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+          <span className="text-sm">Verificando acesso...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return null; // Redirecionando...
+  }
 
   // Handlers
   const handleSearch = (overrideFilters?: CustomerFilters) => {

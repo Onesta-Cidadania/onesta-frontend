@@ -11,6 +11,7 @@ import type {
   Partner,
   PaginatedCustomers,
   ApiResponse,
+  UserRole,
 } from '@/lib/supabase/types';
 import { startOfDay, endOfDay, formatISO } from 'date-fns';
 
@@ -102,14 +103,14 @@ export const customerService = {
         query = query.lte('reservation_date', formatISO(endOfDay(filters.reservation_date_end)));
       }
 
-      // TODO: Controle de acesso por role (descomentar quando user_roles estiver pronto)
-      // const userRole = await getUserRole();
-      // if (userRole?.role === 'partner') {
-      //   query = query.eq('partner_id', userRole.partner_id);
-      // }
-      // if (userRole?.role === 'customer') {
-      //   return { data: { customers: [], total: 0, page, pageSize, totalPages: 0 }, error: null };
-      // }
+      // Controle de acesso por role
+      const userRole = await customerService.getUserRole();
+      if (userRole?.role === 'partner') {
+        query = query.eq('partner_id', userRole.partner_id);
+      }
+      if (userRole?.role === 'customer') {
+        return { data: { customers: [], total: 0, page, pageSize, totalPages: 0 }, error: null };
+      }
 
       // Paginação
       query = query.range(from, to);
@@ -188,23 +189,22 @@ export const customerService = {
     }
   },
 
-  // TODO: Funções de controle de acesso (descomentar quando user_roles estiver pronto)
-  // /**
-  //  * Busca o role do usuário autenticado
-  //  * @returns Promise com dados do role
-  //  */
-  // async getUserRole(): Promise<UserRole | null> {
-  //   const { data: { user } } = await supabase().auth.getUser();
-  //   if (!user) return null;
-  //
-  //   const { data } = await supabase()
-  //     .from('user_roles')
-  //     .select('*')
-  //     .eq('user_id', user.id)
-  //     .single();
-  //
-  //   return data;
-  // },
+  /**
+   * Busca o role do usuário autenticado
+   * @returns Promise com dados do role
+   */
+  async getUserRole(): Promise<UserRole | null> {
+    const { data: { user } } = await supabase().auth.getUser();
+    if (!user) return null;
+
+    const { data } = await supabase()
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    return data;
+  },
 };
 
 export default customerService;
