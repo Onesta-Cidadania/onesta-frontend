@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Agendamentos from "./pages/Agendamentos";
+import ConsultaClientes from "./pages/ConsultaClientes";
 import Login from "./pages/Login";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import NovaSenha from "./pages/NovaSenha";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
           <Route path="/nova-senha" element={<NovaSenha />} />
           <Route path="/agendamentos" element={<Agendamentos />} />
+          <Route path="/consulta-clientes" element={<ConsultaClientes />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
