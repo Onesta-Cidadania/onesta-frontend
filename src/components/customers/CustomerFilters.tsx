@@ -19,14 +19,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import type { CustomerFilters as TCustomerFilters, CustomerStatus, FormService } from "@/lib/supabase/types";
 
 interface CustomerFiltersProps {
   filters: TCustomerFilters;
   onFiltersChange: (filters: TCustomerFilters) => void;
-  onSearch: () => void;
+  onSearch: (overrideFilters?: TCustomerFilters) => void;
   services: FormService[];
   isLoading?: boolean;
+  hasActiveFilters?: boolean;
 }
 
 const STATUS_OPTIONS: { value: CustomerStatus; label: string }[] = [
@@ -38,16 +40,33 @@ const STATUS_OPTIONS: { value: CustomerStatus; label: string }[] = [
   { value: "PENDENTE", label: "Pendente" },
 ];
 
-function DatePickerField({
+function DateRangePickerField({
   label,
-  date,
-  onDateChange,
+  startDate,
+  endDate,
+  onRangeChange,
 }: {
   label: string;
-  date: Date | undefined;
-  onDateChange: (date: Date | undefined) => void;
+  startDate: Date | undefined;
+  endDate: Date | undefined;
+  onRangeChange: (range: { start: Date | undefined; end: Date | undefined }) => void;
 }) {
   const [open, setOpen] = useState(false);
+
+  const range: DateRange = {
+    from: startDate,
+    to: endDate,
+  };
+
+  const displayText = () => {
+    if (startDate && endDate) {
+      return `${format(startDate, "dd/MM/yyyy", { locale: ptBR })} — ${format(endDate, "dd/MM/yyyy", { locale: ptBR })}`;
+    }
+    if (startDate) {
+      return `${format(startDate, "dd/MM/yyyy", { locale: ptBR })} — ...`;
+    }
+    return "Selecione o período...";
+  };
 
   return (
     <div className="space-y-2">
@@ -58,20 +77,27 @@ function DatePickerField({
             variant="outline"
             className={cn(
               "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground"
+              !startDate && "text-muted-foreground"
             )}
           >
-            {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione..."}
+            {displayText()}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
-            mode="single"
-            selected={date}
-            onSelect={(d) => {
-              onDateChange(d);
-              setOpen(false);
+            mode="range"
+            selected={range}
+            onSelect={(selectedRange) => {
+              onRangeChange({
+                start: selectedRange?.from,
+                end: selectedRange?.to,
+              });
+              // Close popover only when both dates are selected
+              if (selectedRange?.from && selectedRange?.to) {
+                setOpen(false);
+              }
             }}
+            numberOfMonths={1}
             initialFocus
           />
         </PopoverContent>
@@ -86,11 +112,13 @@ export function CustomerFiltersPanel({
   onSearch,
   services,
   isLoading,
+  hasActiveFilters = false,
 }: CustomerFiltersProps) {
   const [expanded, setExpanded] = useState(true);
 
   const handleClear = () => {
     onFiltersChange({});
+    onSearch({});
   };
 
   const updateFilter = <K extends keyof TCustomerFilters>(
@@ -106,9 +134,6 @@ export function CustomerFiltersPanel({
     }
   };
 
-  const hasActiveFilters = Object.values(filters).some(
-    (v) => v !== undefined && v !== ""
-  );
 
   return (
     <div className="bg-white rounded-xl border shadow-sm">
@@ -209,61 +234,46 @@ export function CustomerFiltersPanel({
             </div>
           </div>
 
-          {/* Row 2: Date filters */}
+          {/* Row 2: Date range filters */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-muted-foreground">
-                Data de Inclusão
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <DatePickerField
-                  label="De"
-                  date={filters.created_at_start}
-                  onDateChange={(d) => updateFilter("created_at_start", d)}
-                />
-                <DatePickerField
-                  label="Até"
-                  date={filters.created_at_end}
-                  onDateChange={(d) => updateFilter("created_at_end", d)}
-                />
-              </div>
-            </div>
+            <DateRangePickerField
+              label="Data de Inclusão"
+              startDate={filters.created_at_start}
+              endDate={filters.created_at_end}
+              onRangeChange={({ start, end }) => {
+                onFiltersChange({
+                  ...filters,
+                  created_at_start: start,
+                  created_at_end: end,
+                });
+              }}
+            />
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-muted-foreground">
-                Data de Agendamento
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <DatePickerField
-                  label="De"
-                  date={filters.scheduled_at_start}
-                  onDateChange={(d) => updateFilter("scheduled_at_start", d)}
-                />
-                <DatePickerField
-                  label="Até"
-                  date={filters.scheduled_at_end}
-                  onDateChange={(d) => updateFilter("scheduled_at_end", d)}
-                />
-              </div>
-            </div>
+            <DateRangePickerField
+              label="Data de Agendamento"
+              startDate={filters.scheduled_at_start}
+              endDate={filters.scheduled_at_end}
+              onRangeChange={({ start, end }) => {
+                onFiltersChange({
+                  ...filters,
+                  scheduled_at_start: start,
+                  scheduled_at_end: end,
+                });
+              }}
+            />
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-muted-foreground">
-                Data de Reserva
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <DatePickerField
-                  label="De"
-                  date={filters.reservation_date_start}
-                  onDateChange={(d) => updateFilter("reservation_date_start", d)}
-                />
-                <DatePickerField
-                  label="Até"
-                  date={filters.reservation_date_end}
-                  onDateChange={(d) => updateFilter("reservation_date_end", d)}
-                />
-              </div>
-            </div>
+            <DateRangePickerField
+              label="Data de Reserva"
+              startDate={filters.reservation_date_start}
+              endDate={filters.reservation_date_end}
+              onRangeChange={({ start, end }) => {
+                onFiltersChange({
+                  ...filters,
+                  reservation_date_start: start,
+                  reservation_date_end: end,
+                });
+              }}
+            />
           </div>
 
           {/* Actions */}
@@ -277,7 +287,7 @@ export function CustomerFiltersPanel({
               <RotateCcw className="h-3 w-3 mr-1" />
               Limpar
             </Button>
-            <Button size="sm" onClick={onSearch} disabled={isLoading}>
+            <Button size="sm" onClick={() => onSearch()} disabled={isLoading}>
               <Search className="h-3 w-3 mr-1" />
               Buscar
             </Button>

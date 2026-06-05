@@ -26,10 +26,11 @@ const ConsultaClientes = () => {
   const [services, setServices] = useState<FormService[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
 
   // TODO: Controle de acesso (descomentar quando user_roles estiver pronto)
   // const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -57,12 +58,16 @@ const ConsultaClientes = () => {
     loadServices();
   }, []);
 
-  // Buscar clientes
-  const fetchCustomers = useCallback(async () => {
+  // Buscar clientes - recebe parâmetros diretamente (não lê do state)
+  const fetchCustomers = useCallback(async (
+    searchFilters: CustomerFilters,
+    searchPage: number,
+    searchPageSize: number
+  ) => {
     setIsLoading(true);
     setError(null);
 
-    const result = await customerService.getCustomers(filters, page, pageSize);
+    const result = await customerService.getCustomers(searchFilters, searchPage, searchPageSize);
 
     if (result.error) {
       setError(result.error.message);
@@ -76,17 +81,19 @@ const ConsultaClientes = () => {
     }
 
     setIsLoading(false);
-  }, [filters, page, pageSize]);
+  }, []);
 
-  // Buscar ao montar e quando filtros/página mudarem
+  // Buscar ao montar
   useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+    fetchCustomers({}, page, pageSize);
+  }, [fetchCustomers, page, pageSize]);
 
   // Handlers
-  const handleSearch = () => {
+  const handleSearch = (overrideFilters?: CustomerFilters) => {
+    const searchFilters = overrideFilters ?? filters;
     setPage(1);
-    fetchCustomers();
+    setLastAppliedFilters(searchFilters);
+    fetchCustomers(searchFilters, 1, pageSize);
   };
 
   const handleFiltersChange = (newFilters: CustomerFilters) => {
@@ -95,11 +102,13 @@ const ConsultaClientes = () => {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+    fetchCustomers(lastAppliedFilters, newPage, pageSize);
   };
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
     setPage(1);
+    fetchCustomers(lastAppliedFilters, 1, newSize);
   };
 
   const handleLogout = async () => {
@@ -168,6 +177,9 @@ const ConsultaClientes = () => {
           onSearch={handleSearch}
           services={services}
           isLoading={isLoading}
+          hasActiveFilters={Object.values(lastAppliedFilters).some(
+            (v) => v !== undefined && v !== ""
+          )}
         />
 
         {/* Table */}

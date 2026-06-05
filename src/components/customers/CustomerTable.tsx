@@ -67,7 +67,8 @@ export function CustomerTable({
   onPageSizeChange,
   isLoading,
 }: CustomerTableProps) {
-  if (isLoading) {
+  // Initial load (no data yet)
+  if (isLoading && customers.length === 0) {
     return (
       <div className="bg-white rounded-xl border shadow-sm p-8">
         <div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -78,7 +79,7 @@ export function CustomerTable({
     );
   }
 
-  if (customers.length === 0) {
+  if (!isLoading && customers.length === 0) {
     return (
       <div className="bg-white rounded-xl border shadow-sm p-8">
         <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -91,7 +92,17 @@ export function CustomerTable({
   }
 
   return (
-    <div className="bg-white rounded-xl border shadow-sm">
+    <div className="bg-white rounded-xl border shadow-sm relative">
+      {/* Loading overlay for subsequent loads (when data already exists) */}
+      {isLoading && customers.length > 0 && (
+        <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-sm rounded-xl flex items-center justify-center">
+          <div className="flex items-center gap-2 text-muted-foreground bg-white rounded-lg px-4 py-2 shadow-sm border">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <span className="text-sm">Carregando...</span>
+          </div>
+        </div>
+      )}
+
       {/* Header com contagem */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b">
         <div className="flex items-center gap-2">
@@ -111,7 +122,7 @@ export function CustomerTable({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="5">5</SelectItem>
               <SelectItem value="20">20</SelectItem>
               <SelectItem value="50">50</SelectItem>
               <SelectItem value="100">100</SelectItem>
