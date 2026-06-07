@@ -2,12 +2,12 @@ import { ArrowRight, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase/client";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
-import { clearAuthenticatedActivity } from "@/lib/auth/session-activity";
+import { useAuth } from "@/hooks/use-auth";
 
 const Agendamentos = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   useAuthenticatedActivity();
 
   useEffect(() => {
@@ -70,8 +70,7 @@ const Agendamentos = () => {
   };
 
   const handleLogout = async () => {
-    clearAuthenticatedActivity();
-    await supabase().auth.signOut();
+    await signOut();
     navigate("/", { replace: true });
   };
 
