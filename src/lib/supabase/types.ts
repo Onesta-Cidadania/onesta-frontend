@@ -95,19 +95,19 @@ export type DatabaseTable = 'services_done';
 export type QueryOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'is' | 'in';
 
 // ============================================================
-// New Schema Types (partners, customers_new, form_services, etc.)
+// New Schema Types (partners, customers_new, services, etc.)
 // ============================================================
 
 /**
- * Status possíveis do cliente
+ * Status possíveis do cliente (vinculados à tabela customer_statuses)
  */
 export type CustomerStatus =
   | 'EM_ANALISE'
-  | 'AGENDADO'
-  | 'RESERVADO'
-  | 'CONCLUIDO'
+  | 'AGUARDANDO_CORRECAO'
+  | 'EM_ANDAMENTO'
+  | 'PAUSADO'
   | 'CANCELADO'
-  | 'PENDENTE';
+  | 'AGENDADO';
 
 /**
  * Papel do usuário no sistema
@@ -129,16 +129,36 @@ export interface Partner {
 }
 
 /**
- * Estrutura da tabela form_services
+ * Estrutura da tabela services (já existente no banco)
  */
-export interface FormService {
-  id: string;
-  code: string;
+export interface Service {
+  id: number;
+  service_id: number;
   name: string;
+  url: string;
+  days_target: number | null;
+  seconds_loop: number | null;
+  timer_hour: number | null;
+  timer_minute: number | null;
+  timer_second: number | null;
+  usar_novo_html: boolean;
+  form_mode: number | null;
+  is_monitoring: boolean | null;
+  cavalo_louco: boolean;
+  weeks_minimum_calendar: number | null;
+  days_minimum_calendar: number | null;
+  days_maximum_calendar: number | null;
+  check_email_booking: boolean | null;
+  default_password: string | null;
+}
+
+/**
+ * Estrutura da tabela customer_statuses
+ */
+export interface CustomerStatusOption {
+  code: string;
+  label: string;
   description: string | null;
-  active: boolean;
-  sort_order: number;
-  created_at: string;
 }
 
 /**
@@ -162,12 +182,12 @@ export interface CustomerNew {
   restriction_periods: unknown;
   scheduled_at: string | null;
   reservation_date: string | null;
-  status: CustomerStatus;
+  status: string;
   previous_status: string | null;
   pending_issues: string | null;
   last_attempt: string | null;
   partner_id: string;
-  service_id: string;
+  service_id: number;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
@@ -205,17 +225,17 @@ export interface UserRole {
  */
 export interface CustomerWithRelations extends CustomerNew {
   partners?: Partner;
-  form_services?: FormService;
+  services?: Service;
 }
 
 /**
  * Filtros para busca de clientes
  */
 export interface CustomerFilters {
-  service_id?: string;
+  service_id?: number;
   name?: string;
   email?: string;
-  status?: CustomerStatus | '';
+  status?: string | '';
   created_at_start?: Date;
   created_at_end?: Date;
   scheduled_at_start?: Date;

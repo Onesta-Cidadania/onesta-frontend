@@ -14,7 +14,8 @@ import { CustomerTable } from "@/components/customers/CustomerTable";
 import type {
   CustomerFilters,
   CustomerWithRelations,
-  FormService,
+  Service,
+  CustomerStatusOption,
   UserRole,
 } from "@/lib/supabase/types";
 
@@ -24,7 +25,8 @@ const ConsultaClientes = () => {
   // State
   const [filters, setFilters] = useState<CustomerFilters>({});
   const [customers, setCustomers] = useState<CustomerWithRelations[]>([]);
-  const [services, setServices] = useState<FormService[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [statusOptions, setStatusOptions] = useState<CustomerStatusOption[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
@@ -50,16 +52,22 @@ const ConsultaClientes = () => {
     checkAccess();
   }, [navigate]);
 
-  // Buscar serviços para o dropdown de filtros
+  // Buscar serviços e status para os filtros
   useEffect(() => {
     if (!userRole) return;
-    const loadServices = async () => {
-      const result = await customerService.getFormServices();
-      if (result.data) {
-        setServices(result.data);
+    const loadData = async () => {
+      const [servicesResult, statusesResult] = await Promise.all([
+        customerService.getServices(),
+        customerService.getStatuses(),
+      ]);
+      if (servicesResult.data) {
+        setServices(servicesResult.data);
+      }
+      if (statusesResult.data) {
+        setStatusOptions(statusesResult.data);
       }
     };
-    loadServices();
+    loadData();
   }, [userRole]);
 
   // Buscar clientes - recebe parâmetros diretamente (não lê do state)
@@ -198,6 +206,7 @@ const ConsultaClientes = () => {
           onFiltersChange={handleFiltersChange}
           onSearch={handleSearch}
           services={services}
+          statusOptions={statusOptions}
           isLoading={isLoading}
           hasActiveFilters={Object.values(lastAppliedFilters).some(
             (v) => v !== undefined && v !== ""
@@ -214,6 +223,7 @@ const ConsultaClientes = () => {
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
           isLoading={isLoading}
+          statusOptions={statusOptions}
         />
       </main>
     </div>

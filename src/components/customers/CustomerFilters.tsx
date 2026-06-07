@@ -20,25 +20,17 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import type { CustomerFilters as TCustomerFilters, CustomerStatus, FormService } from "@/lib/supabase/types";
+import type { CustomerFilters as TCustomerFilters, Service, CustomerStatusOption } from "@/lib/supabase/types";
 
 interface CustomerFiltersProps {
   filters: TCustomerFilters;
   onFiltersChange: (filters: TCustomerFilters) => void;
   onSearch: (overrideFilters?: TCustomerFilters) => void;
-  services: FormService[];
+  services: Service[];
+  statusOptions?: CustomerStatusOption[];
   isLoading?: boolean;
   hasActiveFilters?: boolean;
 }
-
-const STATUS_OPTIONS: { value: CustomerStatus; label: string }[] = [
-  { value: "EM_ANALISE", label: "Em Análise" },
-  { value: "AGENDADO", label: "Agendado" },
-  { value: "RESERVADO", label: "Reservado" },
-  { value: "CONCLUIDO", label: "Concluído" },
-  { value: "CANCELADO", label: "Cancelado" },
-  { value: "PENDENTE", label: "Pendente" },
-];
 
 function DateRangePickerField({
   label,
@@ -111,6 +103,7 @@ export function CustomerFiltersPanel({
   onFiltersChange,
   onSearch,
   services,
+  statusOptions = [],
   isLoading,
   hasActiveFilters = false,
 }: CustomerFiltersProps) {
@@ -169,9 +162,9 @@ export function CustomerFiltersPanel({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Serviço</Label>
               <Select
-                value={filters.service_id || "ALL"}
+                value={filters.service_id != null ? String(filters.service_id) : "ALL"}
                 onValueChange={(v) =>
-                  updateFilter("service_id", v === "ALL" ? undefined : v)
+                  updateFilter("service_id", v === "ALL" ? undefined : Number(v))
                 }
               >
                 <SelectTrigger>
@@ -180,7 +173,7 @@ export function CustomerFiltersPanel({
                 <SelectContent>
                   <SelectItem value="ALL">Todos os serviços</SelectItem>
                   {services.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
+                    <SelectItem key={s.id} value={String(s.id)}>
                       {s.name}
                     </SelectItem>
                   ))}
@@ -216,7 +209,7 @@ export function CustomerFiltersPanel({
               <Select
                 value={filters.status || "ALL"}
                 onValueChange={(v) =>
-                  updateFilter("status", v === "ALL" ? undefined : (v as CustomerStatus))
+                  updateFilter("status", v === "ALL" ? undefined : v)
                 }
               >
                 <SelectTrigger>
@@ -224,8 +217,8 @@ export function CustomerFiltersPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Todos os status</SelectItem>
-                  {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
+                  {(statusOptions || []).map((s) => (
+                    <SelectItem key={s.code} value={s.code}>
                       {s.label}
                     </SelectItem>
                   ))}

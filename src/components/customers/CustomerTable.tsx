@@ -22,19 +22,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CustomerWithRelations, CustomerStatus } from "@/lib/supabase/types";
+import type { CustomerWithRelations, CustomerStatusOption } from "@/lib/supabase/types";
 
-// Mapeamento de status para label + cor do badge
-const STATUS_MAP: Record<
-  CustomerStatus,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
-> = {
-  EM_ANALISE: { label: "Em Análise", variant: "secondary" },
-  AGENDADO: { label: "Agendado", variant: "default" },
-  RESERVADO: { label: "Reservado", variant: "outline" },
-  CONCLUIDO: { label: "Concluído", variant: "default" },
-  CANCELADO: { label: "Cancelado", variant: "destructive" },
-  PENDENTE: { label: "Pendente", variant: "secondary" },
+// Mapeamento de status code → cor do badge
+const STATUS_VARIANT_MAP: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  EM_ANALISE: "secondary",
+  AGUARDANDO_CORRECAO: "outline",
+  EM_ANDAMENTO: "default",
+  PAUSADO: "secondary",
+  CANCELADO: "destructive",
+  AGENDADO: "default",
+};
+
+// Fallback labels caso não consiga buscar do banco
+const STATUS_LABEL_FALLBACK: Record<string, string> = {
+  EM_ANALISE: "Em Análise",
+  AGUARDANDO_CORRECAO: "Aguardando Correção",
+  EM_ANDAMENTO: "Em Andamento",
+  PAUSADO: "Pausado",
+  CANCELADO: "Cancelado",
+  AGENDADO: "Agendado",
 };
 
 interface CustomerTableProps {
@@ -46,6 +53,7 @@ interface CustomerTableProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   isLoading?: boolean;
+  statusOptions?: CustomerStatusOption[];
 }
 
 function formatDateSafe(dateStr: string | null | undefined): string {
@@ -66,6 +74,7 @@ export function CustomerTable({
   onPageChange,
   onPageSizeChange,
   isLoading,
+  statusOptions = [],
 }: CustomerTableProps) {
   // Initial load (no data yet)
   if (isLoading && customers.length === 0) {
@@ -148,12 +157,12 @@ export function CustomerTable({
           </TableHeader>
           <TableBody>
             {customers.map((customer) => {
-              const statusInfo = STATUS_MAP[customer.status] || {
-                label: customer.status,
-                variant: "outline" as const,
-              };
+              // Busca label do status: primeiro do banco, depois fallback, último o code raw
+              const statusFromDb = statusOptions.find(s => s.code === customer.status);
+              const statusLabel = statusFromDb?.label || STATUS_LABEL_FALLBACK[customer.status] || customer.status;
+              const statusVariant = STATUS_VARIANT_MAP[customer.status] || "outline" as const;
 
-              const serviceName = customer.form_services?.name || "—";
+              const serviceName = customer.services?.name || "—";
               const partnerName = customer.partners?.full_name || "—";
 
               return (
@@ -193,8 +202,8 @@ export function CustomerTable({
 
                   {/* Status */}
                   <TableCell>
-                    <Badge variant={statusInfo.variant} className="text-xs">
-                      {statusInfo.label}
+                    <Badge variant={statusVariant} className="text-xs">
+                      {statusLabel}
                     </Badge>
                   </TableCell>
 

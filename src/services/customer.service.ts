@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase/client';
 import type {
   CustomerFilters,
   CustomerWithRelations,
-  FormService,
+  Service,
+  CustomerStatusOption,
   Partner,
   PaginatedCustomers,
   ApiResponse,
@@ -59,7 +60,7 @@ export const customerService = {
       // Query principal com joins
       let query = supabase()
         .from(TABLE_NAME)
-        .select('*, partners(id, full_name, email), form_services(id, code, name)', { count: 'exact' })
+        .select('*, partners(id, full_name, email), services(id, service_id, name)', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       // Aplicar filtros
@@ -141,16 +142,38 @@ export const customerService = {
   },
 
   /**
-   * Busca todos os serviços de formulário ativos
-   * @returns Promise com array de FormService
+   * Busca todos os serviços disponíveis
+   * @returns Promise com array de Service
    */
-  async getFormServices(): Promise<ApiResponse<FormService[]>> {
+  async getServices(): Promise<ApiResponse<Service[]>> {
     try {
       const { data, error } = await supabase()
-        .from('form_services')
+        .from('services')
         .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
+        .order('name', { ascending: true });
+
+      if (error) {
+        return handleError(error);
+      }
+
+      return {
+        data: data || [],
+        error: null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Busca todos os status disponíveis para clientes
+   * @returns Promise com array de CustomerStatusOption
+   */
+  async getStatuses(): Promise<ApiResponse<CustomerStatusOption[]>> {
+    try {
+      const { data, error } = await supabase()
+        .from('customer_statuses')
+        .select('*');
 
       if (error) {
         return handleError(error);
