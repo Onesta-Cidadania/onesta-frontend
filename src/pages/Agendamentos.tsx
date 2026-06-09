@@ -1,14 +1,16 @@
-import { ArrowRight, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
+import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
+import { isRoleIn, UserRole } from "@/lib/auth/access-control";
 
 const Agendamentos = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { role, signOut } = useAuth();
   useAuthenticatedActivity();
+  const canAccessPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -90,10 +92,18 @@ const Agendamentos = () => {
             </span>
           </a>
 
-          <Button type="button" variant="outline" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            {canAccessPartners && (
+              <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
+                <Building2 className="h-4 w-4" />
+                Assessorias
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
       

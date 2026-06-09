@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Agendamentos from "./pages/Agendamentos";
+import Assessorias from "./pages/Assessorias";
 import Login from "./pages/Login";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import NovaSenha from "./pages/NovaSenha";
@@ -37,6 +38,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner, UserRole.Customer]}>
                   <Agendamentos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assessorias"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner]}>
+                  <Assessorias />
                 </ProtectedRoute>
               }
             />
