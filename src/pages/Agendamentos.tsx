@@ -1,14 +1,16 @@
-import { ArrowRight, FileText, LogOut, MapPin, RefreshCw, Users } from "lucide-react";
+import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase/client";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
-import { clearAuthenticatedActivity } from "@/lib/auth/session-activity";
+import { useAuth } from "@/hooks/use-auth";
+import { isRoleIn, UserRole } from "@/lib/auth/access-control";
 
 const Agendamentos = () => {
   const navigate = useNavigate();
+  const { role, signOut } = useAuth();
   useAuthenticatedActivity();
+  const canAccessPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -70,8 +72,7 @@ const Agendamentos = () => {
   };
 
   const handleLogout = async () => {
-    clearAuthenticatedActivity();
-    await supabase().auth.signOut();
+    await signOut();
     navigate("/", { replace: true });
   };
 
@@ -92,19 +93,15 @@ const Agendamentos = () => {
           </a>
 
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/consulta-clientes")}
-              title="Consulta de Clientes"
-            >
-              <Users className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Clientes</span>
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={handleLogout}>
+            {canAccessPartners && (
+              <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
+                <Building2 className="h-4 w-4" />
+                Assessorias
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sair</span>
+              Sair
             </Button>
           </div>
         </div>
