@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Loader2, LogOut, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -249,11 +249,6 @@ const Assessorias = () => {
         <Card>
           <CardHeader>
             <CardTitle>Lista de assessorias</CardTitle>
-            <CardDescription>
-              {role === UserRole.Partner
-                ? "Seu perfil permite consultar e editar somente a assessoria vinculada ao seu usuário."
-                : "Use o filtro para localizar uma assessoria pelo nome."}
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {role === UserRole.Admin && (
