@@ -5,6 +5,7 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Users } from "lucide-react";
+import { UserRole } from "@/lib/auth/access-control";
 import {
   Table,
   TableBody,
@@ -24,14 +25,14 @@ import {
 } from "@/components/ui/select";
 import type { CustomerWithRelations, CustomerStatusOption } from "@/lib/supabase/types";
 
-// Mapeamento de status code → cor do badge
-const STATUS_VARIANT_MAP: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  EM_ANALISE: "secondary",
-  AGUARDANDO_CORRECAO: "outline",
-  EM_ANDAMENTO: "default",
-  PAUSADO: "secondary",
-  CANCELADO: "destructive",
-  AGENDADO: "default",
+// Mapeamento de status code → classes CSS do badge
+const STATUS_COLOR_MAP: Record<string, string> = {
+  EM_ANALISE: "bg-amber-100 text-amber-800 border-amber-300",
+  AGUARDANDO_CORRECAO: "bg-red-100 text-red-800 border-red-300",
+  EM_ANDAMENTO: "bg-blue-100 text-blue-800 border-blue-300",
+  PAUSADO: "bg-red-100 text-red-800 border-red-300",
+  CANCELADO: "bg-white text-gray-600 border-gray-300",
+  AGENDADO: "bg-green-100 text-green-800 border-green-300",
 };
 
 // Fallback labels caso não consiga buscar do banco
@@ -54,6 +55,7 @@ interface CustomerTableProps {
   onPageSizeChange: (size: number) => void;
   isLoading?: boolean;
   statusOptions?: CustomerStatusOption[];
+  role?: UserRole | null;
 }
 
 function formatDateSafe(dateStr: string | null | undefined): string {
@@ -75,7 +77,10 @@ export function CustomerTable({
   onPageSizeChange,
   isLoading,
   statusOptions = [],
+  role,
 }: CustomerTableProps) {
+  const isAdmin = role === UserRole.Admin;
+
   // Initial load (no data yet)
   if (isLoading && customers.length === 0) {
     return (
@@ -131,7 +136,7 @@ export function CustomerTable({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
               <SelectItem value="20">20</SelectItem>
               <SelectItem value="50">50</SelectItem>
               <SelectItem value="100">100</SelectItem>
@@ -149,6 +154,9 @@ export function CustomerTable({
               <TableHead>Nome</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="hidden lg:table-cell">Serviço</TableHead>
+              {isAdmin && (
+                <TableHead className="hidden lg:table-cell">Assessoria</TableHead>
+              )}
               <TableHead>Status</TableHead>
               <TableHead className="hidden md:table-cell">Inclusão</TableHead>
               <TableHead className="hidden lg:table-cell">Agendamento</TableHead>
@@ -160,7 +168,7 @@ export function CustomerTable({
               // Busca label do status: primeiro do banco, depois fallback, último o code raw
               const statusFromDb = statusOptions.find(s => s.code === customer.status);
               const statusLabel = statusFromDb?.label || STATUS_LABEL_FALLBACK[customer.status] || customer.status;
-              const statusVariant = STATUS_VARIANT_MAP[customer.status] || "outline" as const;
+              const statusColor = STATUS_COLOR_MAP[customer.status] || "bg-gray-100 text-gray-800 border-gray-300";
 
               const serviceName = customer.services?.name || "—";
               const partnerName = customer.partners?.full_name || "—";
@@ -192,17 +200,19 @@ export function CustomerTable({
 
                   {/* Serviço */}
                   <TableCell className="hidden lg:table-cell text-sm">
-                    <div>
-                      <div className="text-sm">{serviceName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Parceiro: {partnerName}
-                      </div>
-                    </div>
+                    <div className="text-sm">{serviceName}</div>
                   </TableCell>
+
+                  {/* Assessoria (só para Admin) */}
+                  {isAdmin && (
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                      {partnerName}
+                    </TableCell>
+                  )}
 
                   {/* Status */}
                   <TableCell>
-                    <Badge variant={statusVariant} className="text-xs">
+                    <Badge variant="outline" className={`whitespace-nowrap text-xs border ${statusColor}`}>
                       {statusLabel}
                     </Badge>
                   </TableCell>

@@ -16,6 +16,7 @@ import type {
   CustomerWithRelations,
   Service,
   CustomerStatusOption,
+  Partner,
 } from "@/lib/supabase/types";
 
 const ConsultaClientes = () => {
@@ -28,27 +29,32 @@ const ConsultaClientes = () => {
   const [customers, setCustomers] = useState<CustomerWithRelations[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [statusOptions, setStatusOptions] = useState<CustomerStatusOption[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
 
-  // Buscar serviços e status para os filtros
+  // Buscar serviços, status e parceiros para os filtros
   useEffect(() => {
     const loadData = async () => {
-      const [servicesResult, statusesResult] = await Promise.all([
+      const [servicesResult, statusesResult, partnersResult] = await Promise.all([
         customerService.getServices(),
         customerService.getStatuses(),
+        customerService.getPartners(),
       ]);
       if (servicesResult.data) {
         setServices(servicesResult.data);
       }
       if (statusesResult.data) {
         setStatusOptions(statusesResult.data);
+      }
+      if (partnersResult.data) {
+        setPartners(partnersResult.data);
       }
     };
     loadData();
@@ -184,10 +190,12 @@ const ConsultaClientes = () => {
           onSearch={handleSearch}
           services={services}
           statusOptions={statusOptions}
+          partners={partners}
           isLoading={isLoading}
           hasActiveFilters={Object.values(lastAppliedFilters).some(
             (v) => v !== undefined && v !== ""
           )}
+          role={role}
         />
 
         {/* Table */}
@@ -202,6 +210,7 @@ const ConsultaClientes = () => {
             onPageSizeChange={handlePageSizeChange}
             isLoading={isLoading}
             statusOptions={statusOptions}
+            role={role}
           />
         </div>
       </main>

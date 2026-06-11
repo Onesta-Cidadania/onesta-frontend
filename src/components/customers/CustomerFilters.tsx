@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import type { CustomerFilters as TCustomerFilters, Service, CustomerStatusOption } from "@/lib/supabase/types";
+import { UserRole } from "@/lib/auth/access-control";
+import type { CustomerFilters as TCustomerFilters, Service, CustomerStatusOption, Partner } from "@/lib/supabase/types";
 
 interface CustomerFiltersProps {
   filters: TCustomerFilters;
@@ -28,8 +29,10 @@ interface CustomerFiltersProps {
   onSearch: (overrideFilters?: TCustomerFilters) => void;
   services: Service[];
   statusOptions?: CustomerStatusOption[];
+  partners?: Partner[];
   isLoading?: boolean;
   hasActiveFilters?: boolean;
+  role?: UserRole | null;
 }
 
 function DateRangePickerField({
@@ -104,10 +107,13 @@ export function CustomerFiltersPanel({
   onSearch,
   services,
   statusOptions = [],
+  partners = [],
   isLoading,
   hasActiveFilters = false,
+  role,
 }: CustomerFiltersProps) {
   const [expanded, setExpanded] = useState(true);
+  const isAdmin = role === UserRole.Admin;
 
   const handleClear = () => {
     onFiltersChange({});
@@ -157,7 +163,7 @@ export function CustomerFiltersPanel({
       {expanded && (
         <div className="px-4 pb-4 space-y-4">
           {/* Row 1: Text/Select filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className={`grid gap-4 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'}`}>
             {/* Serviço */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Serviço</Label>
@@ -202,6 +208,31 @@ export function CustomerFiltersPanel({
                 onKeyDown={handleKeyDown}
               />
             </div>
+
+            {/* Assessoria (só para Admin) */}
+            {isAdmin && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Assessoria</Label>
+                <Select
+                  value={filters.partner_id || "ALL"}
+                  onValueChange={(v) =>
+                    updateFilter("partner_id", v === "ALL" ? undefined : v)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as assessorias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todas as assessorias</SelectItem>
+                    {partners.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Status */}
             <div className="space-y-2">

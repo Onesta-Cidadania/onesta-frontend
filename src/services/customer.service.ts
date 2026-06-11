@@ -84,6 +84,10 @@ export const customerService = {
         query = query.eq('status', filters.status);
       }
 
+      if (filters.partner_id) {
+        query = query.eq('partner_id', filters.partner_id);
+      }
+
       // Filtro de data de inclusão (created_at) - sem considerar horário
       if (filters.created_at_start) {
         query = query.gte('created_at', formatISO(startOfDay(filters.created_at_start)));

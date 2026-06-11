@@ -236,6 +236,7 @@ export interface CustomerFilters {
   name?: string;
   email?: string;
   status?: string | '';
+  partner_id?: string;
   created_at_start?: Date;
   created_at_end?: Date;
   scheduled_at_start?: Date;
