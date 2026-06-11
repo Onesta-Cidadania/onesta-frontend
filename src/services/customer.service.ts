@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
+import { UserRole as UserRoleEnum } from '@/lib/auth/access-control';
 import type {
   CustomerFilters,
   CustomerWithRelations,
@@ -12,7 +13,6 @@ import type {
   Partner,
   PaginatedCustomers,
   ApiResponse,
-  UserRole,
 } from '@/lib/supabase/types';
 import { startOfDay, endOfDay, formatISO } from 'date-fns';
 
@@ -51,7 +51,8 @@ export const customerService = {
   async getCustomers(
     filters: CustomerFilters = {},
     page: number = 1,
-    pageSize: number = 20
+    pageSize: number = 20,
+    userAccess?: { role: UserRoleEnum | null; partnerId: string | null }
   ): Promise<ApiResponse<PaginatedCustomers>> {
     try {
       const from = (page - 1) * pageSize;
@@ -104,12 +105,11 @@ export const customerService = {
         query = query.lte('reservation_date', formatISO(endOfDay(filters.reservation_date_end)));
       }
 
-      // Controle de acesso por role
-      const userRole = await customerService.getUserRole();
-      if (userRole?.role === 'partner') {
-        query = query.eq('partner_id', userRole.partner_id);
+      // Controle de acesso por role (usa dados do AuthContext - cache)
+      if (userAccess?.role === UserRoleEnum.Partner) {
+        query = query.eq('partner_id', userAccess.partnerId);
       }
-      if (userRole?.role === 'customer') {
+      if (userAccess?.role === UserRoleEnum.Customer) {
         return { data: { customers: [], total: 0, page, pageSize, totalPages: 0 }, error: null };
       }
 
@@ -212,22 +212,6 @@ export const customerService = {
     }
   },
 
-  /**
-   * Busca o role do usuário autenticado
-   * @returns Promise com dados do role
-   */
-  async getUserRole(): Promise<UserRole | null> {
-    const { data: { user } } = await supabase().auth.getUser();
-    if (!user) return null;
-
-    const { data } = await supabase()
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    return data;
-  },
 };
 
 export default customerService;

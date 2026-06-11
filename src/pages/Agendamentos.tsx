@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
+import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw, Users } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -94,12 +94,18 @@ const Agendamentos = () => {
 
           <div className="flex items-center gap-2">
             {canAccessPartners && (
-              <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
-                <Building2 className="h-4 w-4" />
-                Assessorias
-              </Button>
+              <>
+                <Button type="button" variant="outline" size="sm" onClick={() => navigate("/consulta-clientes")} title="Consulta de Clientes">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Clientes</span>
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => navigate("/assessorias")} title="Assessorias">
+                  <Building2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Assessorias</span>
+                </Button>
+              </>
             )}
-            <Button type="button" variant="outline" onClick={handleLogout}>
+            <Button type="button" variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
               Sair
             </Button>

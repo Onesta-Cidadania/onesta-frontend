@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase/client";
-import { clearAuthenticatedActivity } from "@/lib/auth/session-activity";
+import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
+import { useAuth } from "@/hooks/use-auth";
 import { customerService } from "@/services/customer.service";
 import { CustomerFiltersPanel } from "@/components/customers/CustomerFilters";
 import { CustomerTable } from "@/components/customers/CustomerTable";
@@ -16,11 +16,12 @@ import type {
   CustomerWithRelations,
   Service,
   CustomerStatusOption,
-  UserRole,
 } from "@/lib/supabase/types";
 
 const ConsultaClientes = () => {
   const navigate = useNavigate();
+  const { role, partnerId, signOut } = useAuth();
+  useAuthenticatedActivity();
 
   // State
   const [filters, setFilters] = useState<CustomerFilters>({});
@@ -35,26 +36,8 @@ const ConsultaClientes = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
 
-  // Controle de acesso - verifica role do usuário
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [accessDenied, setAccessDenied] = useState(false);
-
-  useEffect(() => {
-    const checkAccess = async () => {
-      const role = await customerService.getUserRole();
-      if (!role || role.role === 'customer') {
-        setAccessDenied(true);
-        navigate('/agendamentos', { replace: true });
-        return;
-      }
-      setUserRole(role);
-    };
-    checkAccess();
-  }, [navigate]);
-
   // Buscar serviços e status para os filtros
   useEffect(() => {
-    if (!userRole) return;
     const loadData = async () => {
       const [servicesResult, statusesResult] = await Promise.all([
         customerService.getServices(),
@@ -68,7 +51,7 @@ const ConsultaClientes = () => {
       }
     };
     loadData();
-  }, [userRole]);
+  }, []);
 
   // Buscar clientes - recebe parâmetros diretamente (não lê do state)
   const fetchCustomers = useCallback(async (
@@ -79,7 +62,10 @@ const ConsultaClientes = () => {
     setIsLoading(true);
     setError(null);
 
-    const result = await customerService.getCustomers(searchFilters, searchPage, searchPageSize);
+    const result = await customerService.getCustomers(
+      searchFilters, searchPage, searchPageSize,
+      { role, partnerId }
+    );
 
     if (result.error) {
       setError(result.error.message);
@@ -93,30 +79,14 @@ const ConsultaClientes = () => {
     }
 
     setIsLoading(false);
-  }, []);
+  }, [role, partnerId]);
 
-  // Buscar ao montar (só depois que acesso foi confirmado)
+  // Buscar ao montar
   useEffect(() => {
-    if (userRole) {
+    if (role) {
       fetchCustomers({}, page, pageSize);
     }
-  }, [fetchCustomers, page, pageSize, userRole]);
-
-  // Enquanto verifica acesso, mostra loading
-  if (!accessDenied && userRole === null) {
-    return (
-      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-          <span className="text-sm">Verificando acesso...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (accessDenied) {
-    return null; // Redirecionando...
-  }
+  }, [fetchCustomers, page, pageSize, role]);
 
   // Handlers
   const handleSearch = (overrideFilters?: CustomerFilters) => {
@@ -142,8 +112,7 @@ const ConsultaClientes = () => {
   };
 
   const handleLogout = async () => {
-    clearAuthenticatedActivity();
-    await supabase().auth.signOut();
+    await signOut();
     navigate("/", { replace: true });
   };
 
