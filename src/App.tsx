@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Agendamentos from "./pages/Agendamentos";
 import Assessorias from "./pages/Assessorias";
+import ConsultaClientes from "./pages/ConsultaClientes";
 import Login from "./pages/Login";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import NovaSenha from "./pages/NovaSenha";
@@ -42,6 +43,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner]}>
                   <Assessorias />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/consulta-clientes"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner]}>
+                  <ConsultaClientes />
                 </ProtectedRoute>
               }
             />
