@@ -8,8 +8,9 @@ import { isRoleIn, UserRole } from "@/lib/auth/access-control";
 
 const Agendamentos = () => {
   const navigate = useNavigate();
-  const { role, signOut } = useAuth();
-  useAuthenticatedActivity();
+  const { role, signOut, status } = useAuth();
+  const isAuthenticated = status === "authenticated";
+  useAuthenticatedActivity(isAuthenticated);
   const canAccessPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
 
   useEffect(() => {
@@ -105,10 +106,12 @@ const Agendamentos = () => {
                 </Button>
               </>
             )}
-            <Button type="button" variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              Sair
-            </Button>
+            {isAuthenticated && (
+              <Button type="button" variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Sair
+              </Button>
+            )}
           </div>
         </div>
       </header>
