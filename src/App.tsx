@@ -35,11 +35,7 @@ const App = () => (
             <Route path="/acesso-negado" element={<AcessoNegado />} />
             <Route
               path="/agendamentos"
-              element={
-                <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner, UserRole.Customer]}>
-                  <Agendamentos />
-                </ProtectedRoute>
-              }
+              element={<Agendamentos />}
             />
             <Route
               path="/assessorias"
