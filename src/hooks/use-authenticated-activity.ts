@@ -9,10 +9,14 @@ import {
 const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = ["keydown", "pointerdown", "scroll", "touchstart"];
 const ACTIVITY_RECORD_INTERVAL_MS = 60 * 1000;
 
-export const useAuthenticatedActivity = () => {
+export const useAuthenticatedActivity = (enabled = true) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     let lastRecordedActivity = 0;
 
     const recordActivity = () => {
@@ -39,5 +43,5 @@ export const useAuthenticatedActivity = () => {
       ACTIVITY_EVENTS.forEach((eventName) => window.removeEventListener(eventName, recordActivity));
       window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
     };
-  }, [navigate]);
+  }, [enabled, navigate]);
 };
