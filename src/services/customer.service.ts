@@ -58,10 +58,13 @@ export const customerService = {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      // Query principal com joins
+      // Query principal com joins (projeção explícita — apenas campos necessários para a tabela)
       let query = supabase()
         .from(TABLE_NAME)
-        .select('*, partners(id, full_name, email), services(id, service_id, name)', { count: 'exact' })
+        .select(
+          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,created_at,partner_id,service_id,partners(id,full_name),services(id,name)',
+          { count: 'exact' }
+        )
         .order('created_at', { ascending: false });
 
       // Aplicar filtros
@@ -149,7 +152,7 @@ export const customerService = {
     try {
       const { data, error } = await supabase()
         .from('services')
-        .select('*')
+        .select('id,name')
         .order('name', { ascending: true });
 
       if (error) {
@@ -196,7 +199,7 @@ export const customerService = {
     try {
       const { data, error } = await supabase()
         .from('partners')
-        .select('*')
+        .select('id,full_name,email')
         .order('full_name', { ascending: true });
 
       if (error) {

@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { LogOut, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,6 +34,7 @@ const ConsultaClientes = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
   const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
 
   // Buscar serviços e status para os filtros
@@ -61,6 +62,7 @@ const ConsultaClientes = () => {
   ) => {
     setIsLoading(true);
     setError(null);
+    setSuccessMessage("");
 
     const result = await customerService.getCustomers(
       searchFilters, searchPage, searchPageSize,
@@ -81,12 +83,17 @@ const ConsultaClientes = () => {
     setIsLoading(false);
   }, [role, partnerId]);
 
-  // Buscar ao montar
+  // Buscar ao montar / quando role muda (não depende de page/pageSize para evitar dupla chamada)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (role) {
-      fetchCustomers({}, page, pageSize);
+      fetchCustomers({}, 1, pageSize);
     }
-  }, [fetchCustomers, page, pageSize, role]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
 
   // Handlers
   const handleSearch = (overrideFilters?: CustomerFilters) => {
@@ -117,54 +124,55 @@ const ConsultaClientes = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-gradient-section">
       {/* Italian Stripe */}
       <div className="italian-stripe w-full" />
 
       {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/agendamentos")}
-              className="mr-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <a href="/" className="flex items-center gap-3" aria-label="Onestà Cidadania Italiana">
-              <span className="font-serif text-xl md:text-2xl font-semibold text-foreground">
-                Onestà
-              </span>
-              <span className="hidden sm:inline text-muted-foreground text-sm">
-                Consulta de Clientes
-              </span>
-            </a>
-          </div>
+      <header className="border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="section-container flex h-16 items-center justify-between">
+          <a href="/" className="flex items-center gap-3" aria-label="Onestà Cidadania Italiana - Página Inicial">
+            <span className="font-serif text-xl font-semibold text-foreground md:text-2xl">Onestà</span>
+            <span className="hidden text-sm text-muted-foreground sm:inline">Cidadania Italiana</span>
+          </a>
 
-          <Button type="button" variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-1" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => navigate("/agendamentos")}>
+              Agendamentos
+            </Button>
+            <Button type="button" variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="section-container py-12 md:py-16">
         {/* Title */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+        <div className="mb-8">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+            <Users className="h-6 w-6 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold text-foreground md:text-4xl">
             Consulta de Clientes
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             Pesquise e filtre os clientes cadastrados no sistema.
           </p>
         </div>
 
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-4 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
+            {successMessage}
+          </div>
+        )}
+
         {/* Error */}
         {error && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             Erro ao buscar clientes: {error}
           </div>
         )}
@@ -183,17 +191,19 @@ const ConsultaClientes = () => {
         />
 
         {/* Table */}
-        <CustomerTable
-          customers={customers}
-          total={total}
-          page={page}
-          pageSize={pageSize}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-          isLoading={isLoading}
-          statusOptions={statusOptions}
-        />
+        <div className="mt-6">
+          <CustomerTable
+            customers={customers}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            isLoading={isLoading}
+            statusOptions={statusOptions}
+          />
+        </div>
       </main>
     </div>
   );
