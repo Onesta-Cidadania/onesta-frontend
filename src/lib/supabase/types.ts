@@ -255,3 +255,41 @@ export interface PaginatedCustomers {
   pageSize: number;
   totalPages: number;
 }
+
+// ============================================================
+// Configurations Types
+// ============================================================
+
+/**
+ * Estrutura da tabela configurations
+ * @description Armazena configurações globais do sistema
+ */
+export interface Configuration {
+  id: number;
+  threads_calendar: number | null;
+  threads_form: number | null;
+  otp_requests: number | null;
+  seconds_to_otp: number | null;
+  seconds_to_form: number | null;
+  minutes_to_logout: number | null;
+  seconds_to_post_booking: number | null;
+  form_send_retries: number | null;
+  minutes_to_ignore_giornaliero: number | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+/**
+ * Campos que podem ser atualizados na tabela configurations
+ */
+export type ConfigurationUpdate = Partial<Pick<Configuration,
+  | 'threads_calendar'
+  | 'threads_form'
+  | 'otp_requests'
+  | 'seconds_to_otp'
+  | 'seconds_to_form'
+  | 'minutes_to_logout'
+  | 'seconds_to_post_booking'
+  | 'form_send_retries'
+  | 'minutes_to_ignore_giornaliero'
+>> & { updated_by?: string };

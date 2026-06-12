@@ -13,6 +13,7 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import NovaSenha from "./pages/NovaSenha";
 import SessionExpirationMonitor from "./components/SessionExpirationMonitor";
 import AcessoNegado from "./pages/AcessoNegado";
+import Configuracoes from "./pages/Configuracoes";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UserRole } from "./lib/auth/access-control";
@@ -53,6 +54,19 @@ const App = () => (
                   <ConsultaClientes />
                 </ProtectedRoute>
               }
+            />
+            {/* TODO: Descomentar ProtectedRoute para produção */}
+            {/* <Route
+              path="/configuracoes"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                  <Configuracoes />
+                </ProtectedRoute>
+              }
+            /> */}
+            <Route
+              path="/configuracoes"
+              element={<Configuracoes />}
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
