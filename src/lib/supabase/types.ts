@@ -95,7 +95,7 @@ export type DatabaseTable = 'services_done';
 export type QueryOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'is' | 'in';
 
 // ============================================================
-// New Schema Types (partners, customers_new, services, etc.)
+// New Schema Types (partners, customers, services, etc.)
 // ============================================================
 
 /**
@@ -162,10 +162,10 @@ export interface CustomerStatusOption {
 }
 
 /**
- * Estrutura da tabela customers_new
- * @description Nova tabela de clientes (schema atualizado)
+ * Estrutura da tabela customers
+ * @description Tabela de clientes
  */
-export interface CustomerNew {
+export interface Customer {
   id: string;
   customer_code: string;
   full_name: string;
@@ -223,7 +223,7 @@ export interface UserRole {
 /**
  * Customer com dados relacionados (join)
  */
-export interface CustomerWithRelations extends CustomerNew {
+export interface CustomerWithRelations extends Customer {
   partners?: Partner;
   services?: Service;
 }

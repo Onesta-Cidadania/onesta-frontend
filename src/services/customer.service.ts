@@ -1,6 +1,6 @@
 /**
  * Serviço de Consulta de Clientes
- * @description Operações relacionadas à tabela customers_new com filtros e paginação
+ * @description Operações relacionadas à tabela customers com filtros e paginação
  */
 
 import { supabase } from '@/lib/supabase/client';
@@ -16,8 +16,8 @@ import type {
 } from '@/lib/supabase/types';
 import { startOfDay, endOfDay, formatISO } from 'date-fns';
 
-// Nome da tabela (usar customers_new enquanto a tabela antiga existe)
-const TABLE_NAME = 'customers_new';
+// Nome da tabela
+const TABLE_NAME = 'customers';
 
 /**
  * Trata erros do Supabase e retorna um formato padronizado

@@ -14,7 +14,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-// TODO: Descomentar imports para produção
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
 import { configurationService } from "@/services/configuration.service";
@@ -60,31 +59,31 @@ const CONFIG_FIELDS: ConfigFieldDefinition[] = [
     key: 'otp_requests',
     label: 'Requisições OTP',
     description: 'Quantidade de requisições para gerar OTP',
-    unit: 'reqs',
+    unit: 'requisições',
   },
   {
     key: 'seconds_to_otp',
-    label: 'Segundos para OTP',
+    label: 'Gerar OTP',
     description: 'Tempo em segundos para gerar o OTP antes da hora alvo',
-    unit: 'seg',
+    unit: 'segundos',
   },
   {
     key: 'seconds_to_form',
-    label: 'Segundos para Formulário',
+    label: 'Montar Formulário',
     description: 'Tempo em segundos para montar formulário antes da hora alvo',
-    unit: 'seg',
+    unit: 'segundos',
   },
   {
     key: 'minutes_to_logout',
-    label: 'Minutos para Logout',
+    label: 'Logout',
     description: 'Minutos para fazer logout antes da hora',
-    unit: 'min',
+    unit: 'minutos',
   },
   {
     key: 'seconds_to_post_booking',
-    label: 'Segundos pós-booking',
+    label: 'Esperar Formulário',
     description: 'Segundos de espera entre o envio do formulário e início de agendamento',
-    unit: 'seg',
+    unit: 'segundos',
   },
   {
     key: 'form_send_retries',
@@ -94,9 +93,9 @@ const CONFIG_FIELDS: ConfigFieldDefinition[] = [
   },
   {
     key: 'minutes_to_ignore_giornaliero',
-    label: 'Minutos p/ Ignorar Giornaliero',
+    label: 'Ignorar Giornaliero',
     description: 'Máximo de tempo de vida de um giornaliero. Mais que isso ele é ignorado',
-    unit: 'min',
+    unit: 'minutos',
   },
 ];
 
@@ -104,12 +103,8 @@ type FormValues = Record<string, string>;
 
 const Configuracoes = () => {
   const navigate = useNavigate();
-  // TODO: Descomentar useAuth e useAuthenticatedActivity para produção
-  const { role, user, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   useAuthenticatedActivity();
-  // const role: string | null = "admin"; // Temporário para testes locais
-  // const user: { email: string } | null = { email: "local_test" }; // Temporário
-  // const signOut = async () => {}; // Temporário
 
   // State
   const [config, setConfig] = useState<Configuration | null>(null);
@@ -223,6 +218,9 @@ const Configuracoes = () => {
             <Button type="button" variant="outline" onClick={() => navigate("/consulta-clientes")}>
               Clientes
             </Button>
+            <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
+              Assessorias
+            </Button>
             <Button type="button" variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
               Sair
@@ -306,7 +304,7 @@ const Configuracoes = () => {
                         min="0"
                         value={formValues[field.key] ?? ''}
                         onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                        className="pr-14"
+                        className="pr-20"
                         placeholder="—"
                       />
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">

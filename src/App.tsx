@@ -56,7 +56,6 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            {/* TODO: Descomentar ProtectedRoute para produção */}
             {
               <Route
                 path="/configuracoes"
@@ -67,7 +66,6 @@ const App = () => (
                 }
               />
             }
-            {/* <Route path="/configuracoes" element={<Configuracoes />} /> */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

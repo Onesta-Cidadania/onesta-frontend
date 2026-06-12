@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw, Users } from "lucide-react";
+import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw, Settings, Users } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -105,6 +105,12 @@ const Agendamentos = () => {
                   <span className="hidden sm:inline">Assessorias</span>
                 </Button>
               </>
+            )}
+            {role === UserRole.Admin && (
+              <Button type="button" variant="outline" size="sm" onClick={() => navigate("/configuracoes")} title="Configurações">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Configurações</span>
+              </Button>
             )}
             {isAuthenticated && (
               <Button type="button" variant="outline" onClick={handleLogout}>

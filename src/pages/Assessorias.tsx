@@ -233,8 +233,8 @@ const Assessorias = () => {
           </a>
 
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate("/agendamentos")}>
-              Agendamentos
+            <Button type="button" variant="outline" onClick={() => navigate("/consulta-clientes")}>
+              Clientes
             </Button>
             <Button type="button" variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
