@@ -219,6 +219,86 @@ export const customerService = {
     }
   },
 
+  /**
+   * Atualiza o status de um cliente individual
+   * @param customerId - ID do cliente
+   * @param newStatus - Novo status
+   * @returns Promise com resposta
+   */
+  async updateCustomerStatus(
+    customerId: string,
+    newStatus: string
+  ): Promise<ApiResponse<{ id: string; status: string }>> {
+    try {
+      const { data, error } = await supabase()
+        .from(TABLE_NAME)
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', customerId)
+        .select('id,status')
+        .single();
+
+      if (error) {
+        return handleError(error);
+      }
+
+      return {
+        data: data as unknown as { id: string; status: string },
+        error: null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Atualiza o status de múltiplos clientes em lote
+   * @param customerIds - Array de IDs dos clientes
+   * @param newStatus - Novo status
+   * @returns Promise com resposta contendo successes e failures
+   */
+  async batchUpdateCustomerStatus(
+    customerIds: string[],
+    newStatus: string
+  ): Promise<ApiResponse<{ success: string[]; failed: string[] }>> {
+    try {
+      const results = await Promise.allSettled(
+        customerIds.map(async (id) => {
+          const { error } = await supabase()
+            .from(TABLE_NAME)
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', id);
+
+          if (error) throw error;
+          return id;
+        })
+      );
+
+      const success: string[] = [];
+      const failed: string[] = [];
+
+      results.forEach((result, index) => {
+        const id = customerIds[index];
+        if (result.status === 'fulfilled') {
+          success.push(id);
+        } else {
+          failed.push(id);
+        }
+      });
+
+      return {
+        data: { success, failed },
+        error: failed.length > 0
+          ? {
+              message: `${failed.length} de ${customerIds.length} atualizações falharam`,
+              code: 'PARTIAL_FAILURE',
+            }
+          : null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
 };
 
 export default customerService;

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut, Settings, Users } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,8 +36,9 @@ const ConsultaClientes = () => {
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
 
   // Buscar serviços, status e parceiros para os filtros
@@ -68,7 +70,6 @@ const ConsultaClientes = () => {
   ) => {
     setIsLoading(true);
     setError(null);
-    setSuccessMessage("");
 
     const result = await customerService.getCustomers(
       searchFilters, searchPage, searchPageSize,
@@ -129,6 +130,61 @@ const ConsultaClientes = () => {
     navigate("/", { replace: true });
   };
 
+  // Status change handlers
+  const handleStatusChange = async (customerId: string, newStatus: string) => {
+    setIsUpdatingStatus(true);
+
+    const result = await customerService.updateCustomerStatus(customerId, newStatus);
+
+    if (result.error) {
+      toast.error("Erro ao atualizar status: " + result.error.message);
+    } else {
+      toast.success("Status atualizado com sucesso.");
+      // Update local state to reflect change immediately
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === customerId ? { ...c, status: newStatus } : c))
+      );
+      setSelectedIds(new Set());
+    }
+
+    setIsUpdatingStatus(false);
+  };
+
+  const handleBatchStatusChange = async (ids: string[], newStatus: string) => {
+    setIsUpdatingStatus(true);
+
+    const result = await customerService.batchUpdateCustomerStatus(ids, newStatus);
+
+    if (result.error) {
+      toast.error(result.error.message || "Erro ao atualizar status em lote.");
+    }
+
+    if (result.data) {
+      const successCount = result.data.success.length;
+      const failedCount = result.data.failed.length;
+
+      if (failedCount === 0) {
+        toast.success(
+          `${successCount} ${successCount === 1 ? "status atualizado" : "status atualizados"} com sucesso.`
+        );
+      } else {
+        toast.error(
+          `${successCount} ${successCount === 1 ? "status atualizado" : "status atualizados"}. ${failedCount} ${failedCount === 1 ? "falha" : "falhas"}.`
+        );
+      }
+
+      // Update local state for successful changes
+      setCustomers((prev) =>
+        prev.map((c) =>
+          result.data!.success.includes(c.id) ? { ...c, status: newStatus } : c
+        )
+      );
+      setSelectedIds(new Set());
+    }
+
+    setIsUpdatingStatus(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-section">
       {/* Italian Stripe */}
@@ -175,13 +231,6 @@ const ConsultaClientes = () => {
           </p>
         </div>
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mb-4 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
-            {successMessage}
-          </div>
-        )}
-
         {/* Error */}
         {error && (
           <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -217,6 +266,11 @@ const ConsultaClientes = () => {
             isLoading={isLoading}
             statusOptions={statusOptions}
             role={role}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            onStatusChange={handleStatusChange}
+            onBatchStatusChange={handleBatchStatusChange}
+            isUpdatingStatus={isUpdatingStatus}
           />
         </div>
       </main>
