@@ -95,7 +95,7 @@ export type DatabaseTable = 'services_done';
 export type QueryOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'is' | 'in';
 
 // ============================================================
-// New Schema Types (partners, customers_new, services, etc.)
+// New Schema Types (partners, customers, services, etc.)
 // ============================================================
 
 /**
@@ -162,10 +162,10 @@ export interface CustomerStatusOption {
 }
 
 /**
- * Estrutura da tabela customers_new
- * @description Nova tabela de clientes (schema atualizado)
+ * Estrutura da tabela customers
+ * @description Tabela de clientes
  */
-export interface CustomerNew {
+export interface Customer {
   id: string;
   customer_code: string;
   full_name: string;
@@ -223,7 +223,7 @@ export interface UserRole {
 /**
  * Customer com dados relacionados (join)
  */
-export interface CustomerWithRelations extends CustomerNew {
+export interface CustomerWithRelations extends Customer {
   partners?: Partner;
   services?: Service;
 }
@@ -255,3 +255,41 @@ export interface PaginatedCustomers {
   pageSize: number;
   totalPages: number;
 }
+
+// ============================================================
+// Configurations Types
+// ============================================================
+
+/**
+ * Estrutura da tabela configurations
+ * @description Armazena configurações globais do sistema
+ */
+export interface Configuration {
+  id: number;
+  threads_calendar: number | null;
+  threads_form: number | null;
+  otp_requests: number | null;
+  seconds_to_otp: number | null;
+  seconds_to_form: number | null;
+  minutes_to_logout: number | null;
+  seconds_to_post_booking: number | null;
+  form_send_retries: number | null;
+  minutes_to_ignore_giornaliero: number | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+/**
+ * Campos que podem ser atualizados na tabela configurations
+ */
+export type ConfigurationUpdate = Partial<Pick<Configuration,
+  | 'threads_calendar'
+  | 'threads_form'
+  | 'otp_requests'
+  | 'seconds_to_otp'
+  | 'seconds_to_form'
+  | 'minutes_to_logout'
+  | 'seconds_to_post_booking'
+  | 'form_send_retries'
+  | 'minutes_to_ignore_giornaliero'
+>> & { updated_by?: string };

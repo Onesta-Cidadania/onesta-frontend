@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Users } from "lucide-react";
+import { LogOut, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
@@ -143,9 +143,15 @@ const ConsultaClientes = () => {
           </a>
 
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate("/agendamentos")}>
-              Agendamentos
+            <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
+              Assessorias
             </Button>
+            {role === "admin" && (
+              <Button type="button" variant="outline" onClick={() => navigate("/configuracoes")}>
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Configurações</span>
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
               Sair
