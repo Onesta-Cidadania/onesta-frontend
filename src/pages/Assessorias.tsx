@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Loader2, LogOut, Pencil, Plus, Search } from "lucide-react";
+import { Building2, Loader2, LogOut, Pencil, Plus, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,8 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/PaginationControls";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
+import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { isRoleIn, UserRole } from "@/lib/auth/access-control";
 import { supabase } from "@/lib/supabase/client";
 
@@ -53,6 +55,8 @@ const Assessorias = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [form, setForm] = useState<PartnerFormState>(emptyForm);
+  const pagination = usePaginatedQuery(10);
+  const { page, pageSize, total, totalPages, from, to, setPage, setPageSize, setTotal, resetPage } = pagination;
 
   const canCreatePartner = role === UserRole.Admin;
   const canEditPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
@@ -72,7 +76,7 @@ const Assessorias = () => {
     try {
       let query = supabase()
         .from("partners")
-        .select("id,full_name,email,phone,created_at")
+        .select("id,full_name,email,phone,created_at", { count: role === UserRole.Admin ? "exact" : undefined })
         .order("full_name", { ascending: true });
 
       if (role === UserRole.Partner) {
@@ -87,22 +91,29 @@ const Assessorias = () => {
         query = query.ilike("full_name", `%${nameFilter.trim()}%`);
       }
 
-      const { data, error } = await query;
+      if (role === UserRole.Admin) {
+        query = query.range(from, to);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) {
         setErrorMessage("Não foi possível carregar as assessorias.");
         setPartners([]);
+        setTotal(0);
         return;
       }
 
       setPartners((data ?? []) as Partner[]);
+      setTotal(role === UserRole.Admin ? count ?? 0 : data?.length ?? 0);
     } catch {
       setErrorMessage("Não foi possível carregar as assessorias.");
       setPartners([]);
+      setTotal(0);
     } finally {
       setIsLoading(false);
     }
-  }, [nameFilter, partnerId, role]);
+  }, [from, nameFilter, partnerId, role, setTotal, to]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -218,6 +229,12 @@ const Assessorias = () => {
             <Button type="button" variant="outline" onClick={() => navigate("/agendamentos")}>
               Agendamentos
             </Button>
+            {role === UserRole.Admin && (
+              <Button type="button" variant="outline" onClick={() => navigate("/perfis-acesso")}>
+                <ShieldCheck className="h-4 w-4" />
+                Perfis
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
               Sair
@@ -255,12 +272,15 @@ const Assessorias = () => {
               <div className="mb-6 flex flex-col gap-3 sm:flex-row">
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={nameFilter}
-                    onChange={(event) => setNameFilter(event.target.value)}
-                    placeholder="Filtrar por nome da assessoria"
-                    className="pl-10"
-                  />
+	                  <Input
+	                    value={nameFilter}
+	                    onChange={(event) => {
+	                      setNameFilter(event.target.value);
+	                      resetPage();
+	                    }}
+	                    placeholder="Filtrar por nome da assessoria"
+	                    className="pl-10"
+	                  />
                 </div>
                 <Button type="button" variant="outline" onClick={() => void fetchPartners()}>
                   Buscar
@@ -319,14 +339,24 @@ const Assessorias = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+	              </Table>
+	            )}
+	            {role === UserRole.Admin && (
+	              <PaginationControls
+	                page={page}
+	                pageSize={pageSize}
+	                total={total}
+	                totalPages={totalPages}
+	                onPageChange={setPage}
+	                onPageSizeChange={setPageSize}
+	              />
+	            )}
+	          </CardContent>
+	        </Card>
       </main>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="left-4 right-4 max-h-[calc(100dvh-2rem)] w-auto max-w-none translate-x-0 overflow-y-auto p-4 sm:left-[50%] sm:right-auto sm:w-full sm:max-w-lg sm:translate-x-[-50%] sm:p-6">
           <DialogHeader>
             <DialogTitle>{editingPartner ? "Editar assessoria" : "Nova assessoria"}</DialogTitle>
             <DialogDescription>Preencha os dados básicos da assessoria.</DialogDescription>

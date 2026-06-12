@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw } from "lucide-react";
+import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const Agendamentos = () => {
   const isAuthenticated = status === "authenticated";
   useAuthenticatedActivity(isAuthenticated);
   const canAccessPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
+  const canAccessProfiles = role === UserRole.Admin;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -98,6 +99,12 @@ const Agendamentos = () => {
               <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
                 <Building2 className="h-4 w-4" />
                 Assessorias
+              </Button>
+            )}
+            {canAccessProfiles && (
+              <Button type="button" variant="outline" onClick={() => navigate("/perfis-acesso")}>
+                <ShieldCheck className="h-4 w-4" />
+                Perfis
               </Button>
             )}
             {isAuthenticated && (
