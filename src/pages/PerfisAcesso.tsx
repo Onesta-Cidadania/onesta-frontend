@@ -43,7 +43,7 @@ import { UserRole } from "@/lib/auth/access-control";
 import { supabase } from "@/lib/supabase/client";
 
 interface UserOption {
-  id: string;
+  user_id: string;
   email: string;
 }
 
@@ -56,10 +56,8 @@ interface PartnerOption {
 interface AccessProfileRow {
   id: string;
   user_id: string;
-  email: string;
   role: UserRole;
   partner_id: string | null;
-  partner_name: string | null;
   created_at: string | null;
 }
 
@@ -143,10 +141,10 @@ const PerfisAcesso = () => {
     const normalizedSearch = search.trim();
 
     let query = supabase()
-      .from("user_role_available_user_options")
-      .select("id,email")
+      .from("user_profiles")
+      .select("user_id,email")
       .order("email", { ascending: true })
-      .limit(normalizedSearch ? 21 : 6);
+      .limit(normalizedSearch ? 100 : 50);
 
     if (normalizedSearch) {
       query = query.ilike("email", `%${normalizedSearch}%`);
@@ -160,7 +158,26 @@ const PerfisAcesso = () => {
       return;
     }
 
-    const options = (data ?? []) as UserOption[];
+    const profileOptions = (data ?? []) as UserOption[];
+    const userIds = profileOptions.map((option) => option.user_id);
+    let linkedUserIds = new Set<string>();
+
+    if (userIds.length > 0) {
+      const { data: linkedRoles, error: linkedRolesError } = await supabase()
+        .from("user_roles")
+        .select("user_id")
+        .in("user_id", userIds);
+
+      if (linkedRolesError) {
+        setUserOptions([]);
+        setHasMoreUserOptions(false);
+        return;
+      }
+
+      linkedUserIds = new Set(((linkedRoles ?? []) as Array<{ user_id: string }>).map((roleRow) => roleRow.user_id));
+    }
+
+    const options = profileOptions.filter((option) => !linkedUserIds.has(option.user_id));
     const limit = normalizedSearch ? 20 : 5;
     setUserOptions(options.slice(0, limit));
     setHasMoreUserOptions(options.length > limit);
@@ -198,14 +215,40 @@ const PerfisAcesso = () => {
     setErrorMessage("");
 
     try {
+      const normalizedEmail = emailFilter.trim();
+      let filteredUserIds: string[] | null = null;
+
+      if (normalizedEmail) {
+        const { data: filteredUsers, error: filteredUsersError } = await supabase()
+          .from("user_profiles")
+          .select("user_id")
+          .ilike("email", `%${normalizedEmail}%`)
+          .limit(1000);
+
+        if (filteredUsersError) {
+          setErrorMessage("Não foi possível carregar os usuários.");
+          setProfiles([]);
+          setTotal(0);
+          return;
+        }
+
+        filteredUserIds = ((filteredUsers ?? []) as Array<{ user_id: string }>).map((profile) => profile.user_id);
+
+        if (filteredUserIds.length === 0) {
+          setProfiles([]);
+          setTotal(0);
+          return;
+        }
+      }
+
       let query = supabase()
-        .from("user_role_profiles")
-        .select("id,user_id,email,role,partner_id,partner_name,created_at", { count: "exact" })
+        .from("user_roles")
+        .select("id,user_id,role,partner_id,created_at", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(from, to);
 
-      if (emailFilter.trim()) {
-        query = query.ilike("email", `%${emailFilter.trim()}%`);
+      if (filteredUserIds) {
+        query = query.in("user_id", filteredUserIds);
       }
 
       const { data, error, count } = await query;
@@ -219,17 +262,45 @@ const PerfisAcesso = () => {
 
       const rows = (data ?? []) as AccessProfileRow[];
       setTotal(count ?? 0);
+      const userIds = [...new Set(rows.map((row) => row.user_id))];
+      const partnerIds = [...new Set(rows.map((row) => row.partner_id).filter(Boolean))] as string[];
+
+      const [usersResult, partnersResult] = await Promise.all([
+        userIds.length > 0
+          ? supabase().from("user_profiles").select("user_id,email").in("user_id", userIds)
+          : Promise.resolve({ data: [], error: null }),
+        partnerIds.length > 0
+          ? supabase().from("partners").select("id,full_name,email").in("id", partnerIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (usersResult.error || partnersResult.error) {
+        setErrorMessage("Não foi possível carregar os dados vinculados.");
+        setProfiles([]);
+        setTotal(0);
+        return;
+      }
+
+      const usersById = new Map(((usersResult.data ?? []) as UserOption[]).map((profile) => [profile.user_id, profile]));
+      const partnersById = new Map(
+        ((partnersResult.data ?? []) as PartnerOption[]).map((partner) => [partner.id, partner]),
+      );
 
       setProfiles(
-        rows.map((row) => ({
-          id: row.id,
-          userId: row.user_id,
-          email: row.email,
-          role: row.role,
-          partnerId: row.partner_id,
-          partnerName: row.partner_name,
-          createdAt: row.created_at,
-        })),
+        rows.map((row) => {
+          const userProfile = usersById.get(row.user_id);
+          const partner = row.partner_id ? partnersById.get(row.partner_id) : null;
+
+          return {
+            id: row.id,
+            userId: row.user_id,
+            email: userProfile?.email ?? "-",
+            role: row.role,
+            partnerId: row.partner_id,
+            partnerName: partner?.full_name ?? null,
+            createdAt: row.created_at,
+          };
+        }),
       );
     } catch {
       setErrorMessage("Não foi possível carregar os perfis de acesso.");
@@ -295,7 +366,7 @@ const PerfisAcesso = () => {
     });
     setUserSearch(profile.email);
     setPartnerSearch(profile.partnerName ?? "");
-    setUserOptions([{ id: profile.userId, email: profile.email }]);
+    setUserOptions([{ user_id: profile.userId, email: profile.email }]);
     setPartnerOptions(
       profile.partnerId && profile.partnerName
         ? [{ id: profile.partnerId, full_name: profile.partnerName, email: "" }]
@@ -593,20 +664,20 @@ const PerfisAcesso = () => {
                         <CommandGroup>
                           {userOptions.map((option) => (
                             <CommandItem
-                              key={option.id}
-                              value={option.id}
+                            key={option.user_id}
+                            value={option.user_id}
                               className="data-[selected=true]:bg-primary/10 data-[selected=true]:text-foreground"
                               onSelect={() => {
                                 setForm((current) => ({
                                   ...current,
-                                  userId: option.id,
+                                  userId: option.user_id,
                                   userEmail: option.email,
                                 }));
                                 setIsUserPopoverOpen(false);
                               }}
                             >
                               <Check
-                                className={cn("mr-2 h-4 w-4", form.userId === option.id ? "opacity-100" : "opacity-0")}
+                                className={cn("mr-2 h-4 w-4", form.userId === option.user_id ? "opacity-100" : "opacity-0")}
                               />
                               <span className="truncate">{option.email}</span>
                             </CommandItem>
