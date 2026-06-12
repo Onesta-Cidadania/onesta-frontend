@@ -15,8 +15,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 // TODO: Descomentar imports para produção
-// import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
-// import { useAuth } from "@/hooks/use-auth";
+import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
+import { useAuth } from "@/hooks/use-auth";
 import { configurationService } from "@/services/configuration.service";
 import type { Configuration } from "@/lib/supabase/types";
 import { toast } from "@/components/ui/sonner";
@@ -105,11 +105,11 @@ type FormValues = Record<string, string>;
 const Configuracoes = () => {
   const navigate = useNavigate();
   // TODO: Descomentar useAuth e useAuthenticatedActivity para produção
-  // const { role, user, signOut } = useAuth();
-  // useAuthenticatedActivity();
-  const role: string | null = "admin"; // Temporário para testes locais
-  const user: { email: string } | null = { email: "local_test" }; // Temporário
-  const signOut = async () => {}; // Temporário
+  const { role, user, signOut } = useAuth();
+  useAuthenticatedActivity();
+  // const role: string | null = "admin"; // Temporário para testes locais
+  // const user: { email: string } | null = { email: "local_test" }; // Temporário
+  // const signOut = async () => {}; // Temporário
 
   // State
   const [config, setConfig] = useState<Configuration | null>(null);

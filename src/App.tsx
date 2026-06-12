@@ -35,14 +35,13 @@ const App = () => (
             <Route path="/recuperar-senha" element={<RecuperarSenha />} />
             <Route path="/nova-senha" element={<NovaSenha />} />
             <Route path="/acesso-negado" element={<AcessoNegado />} />
-            <Route
-              path="/agendamentos"
-              element={<Agendamentos />}
-            />
+            <Route path="/agendamentos" element={<Agendamentos />} />
             <Route
               path="/assessorias"
               element={
-                <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner]}>
+                <ProtectedRoute
+                  allowedRoles={[UserRole.Admin, UserRole.Partner]}
+                >
                   <Assessorias />
                 </ProtectedRoute>
               }
@@ -50,24 +49,25 @@ const App = () => (
             <Route
               path="/consulta-clientes"
               element={
-                <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner]}>
+                <ProtectedRoute
+                  allowedRoles={[UserRole.Admin, UserRole.Partner]}
+                >
                   <ConsultaClientes />
                 </ProtectedRoute>
               }
             />
             {/* TODO: Descomentar ProtectedRoute para produção */}
-            {/* <Route
-              path="/configuracoes"
-              element={
-                <ProtectedRoute allowedRoles={[UserRole.Admin]}>
-                  <Configuracoes />
-                </ProtectedRoute>
-              }
-            /> */}
-            <Route
-              path="/configuracoes"
-              element={<Configuracoes />}
-            />
+            {
+              <Route
+                path="/configuracoes"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                    <Configuracoes />
+                  </ProtectedRoute>
+                }
+              />
+            }
+            {/* <Route path="/configuracoes" element={<Configuracoes />} /> */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
