@@ -62,7 +62,7 @@ export const customerService = {
       let query = supabase()
         .from(TABLE_NAME)
         .select(
-          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,created_at,partner_id,service_id,partners(id,full_name),services(id,name)',
+          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,last_attempt,created_at,partner_id,service_id,partners(id,full_name),services(id,name)',
           { count: 'exact' }
         )
         .order('created_at', { ascending: false });

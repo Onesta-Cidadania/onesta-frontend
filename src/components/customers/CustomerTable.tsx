@@ -318,6 +318,7 @@ export function CustomerTable({
               <TableHead>Status</TableHead>
               <TableHead className="hidden md:table-cell">Inclusão</TableHead>
               <TableHead className="hidden lg:table-cell">Agendamento</TableHead>
+              <TableHead className="hidden xl:table-cell">Últ. Tentativa</TableHead>
               <TableHead className="hidden xl:table-cell">Reserva</TableHead>
             </TableRow>
           </TableHeader>
@@ -432,6 +433,11 @@ export function CustomerTable({
                   {/* Data Agendamento */}
                   <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                     {formatDateSafe(customer.scheduled_at)}
+                  </TableCell>
+
+                  {/* Última Tentativa */}
+                  <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+                    {formatDateSafe(customer.last_attempt)}
                   </TableCell>
 
                   {/* Data Reserva */}
