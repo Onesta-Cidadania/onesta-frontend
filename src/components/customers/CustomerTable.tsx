@@ -1,10 +1,11 @@
 /**
  * CustomerTable - Tabela de resultados da consulta de clientes
+ * @description Inclui seleção de linhas, alteração de status inline e ações em lote
  */
 
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Users } from "lucide-react";
+import { CheckSquare, Users, X } from "lucide-react";
 import { UserRole } from "@/lib/auth/access-control";
 import {
   Table,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -45,6 +47,12 @@ const STATUS_LABEL_FALLBACK: Record<string, string> = {
   AGENDADO: "Agendado",
 };
 
+// Status que o Assessor pode selecionar
+const PARTNER_ALLOWED_TARGETS = ["CANCELADO", "PAUSADO"];
+
+// Status que bloqueia o Assessor de fazer qualquer alteração
+const PARTNER_BLOCKED_CURRENT = "AGENDADO";
+
 interface CustomerTableProps {
   customers: CustomerWithRelations[];
   total: number;
@@ -56,6 +64,11 @@ interface CustomerTableProps {
   isLoading?: boolean;
   statusOptions?: CustomerStatusOption[];
   role?: UserRole | null;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
+  onStatusChange?: (customerId: string, newStatus: string) => void;
+  onBatchStatusChange?: (ids: string[], newStatus: string) => void;
+  isUpdatingStatus?: boolean;
 }
 
 function formatDateSafe(dateStr: string | null | undefined): string {
@@ -65,6 +78,35 @@ function formatDateSafe(dateStr: string | null | undefined): string {
   } catch {
     return dateStr;
   }
+}
+
+/**
+ * Retorna os status disponíveis para seleção baseado no role e status atual
+ */
+function getAvailableStatuses(
+  currentStatus: string,
+  role: UserRole | null | undefined,
+  allStatuses: CustomerStatusOption[]
+): CustomerStatusOption[] {
+  if (role === UserRole.Admin) {
+    // Admin pode trocar para qualquer status
+    return allStatuses.filter((s) => s.code !== currentStatus);
+  }
+
+  if (role === UserRole.Partner) {
+    // Assessor não pode alterar se status atual é AGENDADO
+    if (currentStatus === PARTNER_BLOCKED_CURRENT) {
+      return [];
+    }
+    // Assessor pode trocar apenas para CANCELADO ou PAUSADO (exceto o atual)
+    return allStatuses.filter(
+      (s) =>
+        PARTNER_ALLOWED_TARGETS.includes(s.code) && s.code !== currentStatus
+    );
+  }
+
+  // Customer e outros não podem alterar
+  return [];
 }
 
 export function CustomerTable({
@@ -78,8 +120,63 @@ export function CustomerTable({
   isLoading,
   statusOptions = [],
   role,
+  selectedIds = new Set(),
+  onSelectionChange,
+  onStatusChange,
+  onBatchStatusChange,
+  isUpdatingStatus,
 }: CustomerTableProps) {
   const isAdmin = role === UserRole.Admin;
+  const isPartner = role === UserRole.Partner;
+
+  // Derived state
+  const allOnPageSelected =
+    customers.length > 0 &&
+    customers.every((c) => selectedIds.has(c.id));
+  const someOnPageSelected =
+    customers.some((c) => selectedIds.has(c.id)) && !allOnPageSelected;
+  const hasSelection = selectedIds.size > 0;
+
+  // Selection handlers
+  const toggleAll = () => {
+    if (!onSelectionChange) return;
+    const next = new Set(selectedIds);
+    if (allOnPageSelected) {
+      // Deselect all on current page
+      customers.forEach((c) => next.delete(c.id));
+    } else {
+      // Select all on current page
+      customers.forEach((c) => next.add(c.id));
+    }
+    onSelectionChange(next);
+  };
+
+  const toggleOne = (id: string) => {
+    if (!onSelectionChange) return;
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    onSelectionChange(next);
+  };
+
+  const clearSelection = () => {
+    onSelectionChange?.(new Set());
+  };
+
+  // Status change handler (individual)
+  const handleStatusSelect = (customerId: string, newStatus: string) => {
+    onStatusChange?.(customerId, newStatus);
+  };
+
+  // Batch status change handler
+  const handleBatchStatusSelect = (newStatus: string) => {
+    if (newStatus && hasSelection) {
+      onBatchStatusChange?.(Array.from(selectedIds), newStatus);
+    }
+  };
 
   // Initial load (no data yet)
   if (isLoading && customers.length === 0) {
@@ -145,11 +242,72 @@ export function CustomerTable({
         </div>
       </div>
 
+      {/* Batch Action Bar */}
+      {hasSelection && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-primary/5 border-b">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                {selectedIds.size} {selectedIds.size === 1 ? "selecionado" : "selecionados"}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Limpar
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Alterar status para:</span>
+            <Select onValueChange={handleBatchStatusSelect} disabled={isUpdatingStatus}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder="Selecione o status..." />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions
+                  .filter((s) => {
+                    if (isAdmin) return true;
+                    if (isPartner) return PARTNER_ALLOWED_TARGETS.includes(s.code);
+                    return false;
+                  })
+                  .map((status) => (
+                    <SelectItem key={status.code} value={status.code}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={allOnPageSelected}
+                  ref={(el) => {
+                    if (el) {
+                      (el as unknown as HTMLButtonElement).dataset.state = someOnPageSelected
+                        ? "indeterminate"
+                        : allOnPageSelected
+                          ? "checked"
+                          : "unchecked";
+                    }
+                  }}
+                  onCheckedChange={toggleAll}
+                  aria-label="Selecionar todos"
+                />
+              </TableHead>
               <TableHead className="w-[80px]">Código</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
@@ -160,21 +318,44 @@ export function CustomerTable({
               <TableHead>Status</TableHead>
               <TableHead className="hidden md:table-cell">Inclusão</TableHead>
               <TableHead className="hidden lg:table-cell">Agendamento</TableHead>
+              <TableHead className="hidden xl:table-cell">Últ. Tentativa</TableHead>
               <TableHead className="hidden xl:table-cell">Reserva</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {customers.map((customer) => {
               // Busca label do status: primeiro do banco, depois fallback, último o code raw
-              const statusFromDb = statusOptions.find(s => s.code === customer.status);
-              const statusLabel = statusFromDb?.label || STATUS_LABEL_FALLBACK[customer.status] || customer.status;
-              const statusColor = STATUS_COLOR_MAP[customer.status] || "bg-gray-100 text-gray-800 border-gray-300";
+              const statusFromDb = statusOptions.find((s) => s.code === customer.status);
+              const statusLabel =
+                statusFromDb?.label || STATUS_LABEL_FALLBACK[customer.status] || customer.status;
+              const statusColor =
+                STATUS_COLOR_MAP[customer.status] || "bg-gray-100 text-gray-800 border-gray-300";
 
               const serviceName = customer.services?.name || "—";
               const partnerName = customer.partners?.full_name || "—";
 
+              // Determine available statuses for this customer
+              const availableStatuses = getAvailableStatuses(
+                customer.status,
+                role,
+                statusOptions
+              );
+              const canChangeStatus = availableStatuses.length > 0;
+
               return (
-                <TableRow key={customer.id} className="hover:bg-muted/50">
+                <TableRow
+                  key={customer.id}
+                  className={`hover:bg-muted/50 ${selectedIds.has(customer.id) ? "bg-primary/5" : ""}`}
+                >
+                  {/* Checkbox */}
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(customer.id)}
+                      onCheckedChange={() => toggleOne(customer.id)}
+                      aria-label={`Selecionar ${customer.full_name}`}
+                    />
+                  </TableCell>
+
                   {/* Código */}
                   <TableCell className="font-mono text-xs font-medium">
                     {customer.customer_code}
@@ -212,9 +393,36 @@ export function CustomerTable({
 
                   {/* Status */}
                   <TableCell>
-                    <Badge variant="outline" className={`whitespace-nowrap text-xs border ${statusColor}`}>
-                      {statusLabel}
-                    </Badge>
+                    {canChangeStatus ? (
+                      <Select
+                        value={customer.status}
+                        onValueChange={(value) => handleStatusSelect(customer.id, value)}
+                        disabled={isUpdatingStatus}
+                      >
+                        <SelectTrigger className="w-auto min-w-[120px] h-7 text-xs border-0 p-0 gap-1 focus:ring-0">
+                          <Badge
+                            variant="outline"
+                            className={`whitespace-nowrap text-xs border cursor-pointer ${statusColor}`}
+                          >
+                            {statusLabel}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableStatuses.map((status) => (
+                            <SelectItem key={status.code} value={status.code}>
+                              {status.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className={`whitespace-nowrap text-xs border ${statusColor}`}
+                      >
+                        {statusLabel}
+                      </Badge>
+                    )}
                   </TableCell>
 
                   {/* Data Inclusão */}
@@ -225,6 +433,11 @@ export function CustomerTable({
                   {/* Data Agendamento */}
                   <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                     {formatDateSafe(customer.scheduled_at)}
+                  </TableCell>
+
+                  {/* Última Tentativa */}
+                  <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+                    {formatDateSafe(customer.last_attempt)}
                   </TableCell>
 
                   {/* Data Reserva */}

@@ -62,7 +62,7 @@ export const customerService = {
       let query = supabase()
         .from(TABLE_NAME)
         .select(
-          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,created_at,partner_id,service_id,partners(id,full_name),services(id,name)',
+          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,last_attempt,created_at,partner_id,service_id,partners(id,full_name),services(id,name)',
           { count: 'exact' }
         )
         .order('created_at', { ascending: false });
@@ -213,6 +213,106 @@ export const customerService = {
       return {
         data: data || [],
         error: null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Atualiza o status de um cliente individual
+   * @param customerId - ID do cliente
+   * @param newStatus - Novo status
+   * @returns Promise com resposta
+   */
+  async updateCustomerStatus(
+    customerId: string,
+    newStatus: string,
+    currentStatus?: string,
+    updatedBy?: string
+  ): Promise<ApiResponse<{ id: string; status: string }>> {
+    try {
+      const updateData: Record<string, unknown> = {
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+        updated_by: updatedBy,
+        previous_status: currentStatus
+      };
+
+      const { data, error } = await supabase()
+        .from(TABLE_NAME)
+        .update(updateData)
+        .eq('id', customerId)
+        .select('id,status')
+        .single();
+
+      if (error) {
+        return handleError(error);
+      }
+
+      return {
+        data: data as unknown as { id: string; status: string },
+        error: null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Atualiza o status de múltiplos clientes em lote
+   * @param customerIds - Array de IDs dos clientes
+   * @param newStatus - Novo status
+   * @returns Promise com resposta contendo successes e failures
+   */
+  async batchUpdateCustomerStatus(
+    items: { id: string; currentStatus: string }[],
+    newStatus: string,
+    updatedBy?: string
+  ): Promise<ApiResponse<{ success: string[]; failed: string[] }>> {
+    try {
+      const updatePayload: Record<string, unknown> = {
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      };
+
+      const results = await Promise.allSettled(
+        items.map(async (item) => {
+          const payload = {
+            ...updatePayload,
+            previous_status: item.currentStatus,
+            ...(updatedBy ? { updated_by: updatedBy } : {}),
+          };
+          const { error } = await supabase()
+            .from(TABLE_NAME)
+            .update(payload)
+            .eq('id', item.id);
+
+          if (error) throw error;
+          return item.id;
+        })
+      );
+
+      const success: string[] = [];
+      const failed: string[] = [];
+
+      results.forEach((result, index) => {
+        const id = items[index].id;
+        if (result.status === 'fulfilled') {
+          success.push(id);
+        } else {
+          failed.push(id);
+        }
+      });
+
+      return {
+        data: { success, failed },
+        error: failed.length > 0
+          ? {
+              message: `${failed.length} de ${items.length} atualizações falharam`,
+              code: 'PARTIAL_FAILURE',
+            }
+          : null,
       };
     } catch (error) {
       return handleError(error);
