@@ -227,12 +227,21 @@ export const customerService = {
    */
   async updateCustomerStatus(
     customerId: string,
-    newStatus: string
+    newStatus: string,
+    currentStatus?: string,
+    updatedBy?: string
   ): Promise<ApiResponse<{ id: string; status: string }>> {
     try {
+      const updateData: Record<string, unknown> = {
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+        updated_by: updatedBy,
+        previous_status: currentStatus
+      };
+
       const { data, error } = await supabase()
         .from(TABLE_NAME)
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', customerId)
         .select('id,status')
         .single();
@@ -257,19 +266,30 @@ export const customerService = {
    * @returns Promise com resposta contendo successes e failures
    */
   async batchUpdateCustomerStatus(
-    customerIds: string[],
-    newStatus: string
+    items: { id: string; currentStatus: string }[],
+    newStatus: string,
+    updatedBy?: string
   ): Promise<ApiResponse<{ success: string[]; failed: string[] }>> {
     try {
+      const updatePayload: Record<string, unknown> = {
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      };
+
       const results = await Promise.allSettled(
-        customerIds.map(async (id) => {
+        items.map(async (item) => {
+          const payload = {
+            ...updatePayload,
+            previous_status: item.currentStatus,
+            ...(updatedBy ? { updated_by: updatedBy } : {}),
+          };
           const { error } = await supabase()
             .from(TABLE_NAME)
-            .update({ status: newStatus, updated_at: new Date().toISOString() })
-            .eq('id', id);
+            .update(payload)
+            .eq('id', item.id);
 
           if (error) throw error;
-          return id;
+          return item.id;
         })
       );
 
@@ -277,7 +297,7 @@ export const customerService = {
       const failed: string[] = [];
 
       results.forEach((result, index) => {
-        const id = customerIds[index];
+        const id = items[index].id;
         if (result.status === 'fulfilled') {
           success.push(id);
         } else {
@@ -289,7 +309,7 @@ export const customerService = {
         data: { success, failed },
         error: failed.length > 0
           ? {
-              message: `${failed.length} de ${customerIds.length} atualizações falharam`,
+              message: `${failed.length} de ${items.length} atualizações falharam`,
               code: 'PARTIAL_FAILURE',
             }
           : null,

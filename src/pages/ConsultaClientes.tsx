@@ -22,7 +22,7 @@ import type {
 
 const ConsultaClientes = () => {
   const navigate = useNavigate();
-  const { role, partnerId, signOut } = useAuth();
+  const { role, partnerId, user, signOut } = useAuth();
   useAuthenticatedActivity();
 
   // State
@@ -134,7 +134,10 @@ const ConsultaClientes = () => {
   const handleStatusChange = async (customerId: string, newStatus: string) => {
     setIsUpdatingStatus(true);
 
-    const result = await customerService.updateCustomerStatus(customerId, newStatus);
+    const customer = customers.find((c) => c.id === customerId);
+    const currentStatus = customer?.status;
+
+    const result = await customerService.updateCustomerStatus(customerId, newStatus, currentStatus, user?.email);
 
     if (result.error) {
       toast.error("Erro ao atualizar status: " + result.error.message);
@@ -142,7 +145,11 @@ const ConsultaClientes = () => {
       toast.success("Status atualizado com sucesso.");
       // Update local state to reflect change immediately
       setCustomers((prev) =>
-        prev.map((c) => (c.id === customerId ? { ...c, status: newStatus } : c))
+        prev.map((c) =>
+          c.id === customerId
+            ? { ...c, status: newStatus, previous_status: currentStatus ?? c.status }
+            : c
+        )
       );
       setSelectedIds(new Set());
     }
@@ -153,7 +160,12 @@ const ConsultaClientes = () => {
   const handleBatchStatusChange = async (ids: string[], newStatus: string) => {
     setIsUpdatingStatus(true);
 
-    const result = await customerService.batchUpdateCustomerStatus(ids, newStatus);
+    const items = ids.map((id) => {
+      const customer = customers.find((c) => c.id === id);
+      return { id, currentStatus: customer?.status ?? "" };
+    });
+
+    const result = await customerService.batchUpdateCustomerStatus(items, newStatus, user?.email);
 
     if (result.error) {
       toast.error(result.error.message || "Erro ao atualizar status em lote.");
