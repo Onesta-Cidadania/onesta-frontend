@@ -287,20 +287,28 @@ const PerfisAcesso = () => {
   }, [fetchProfiles]);
 
   useEffect(() => {
+    if (!isDialogOpen) {
+      return;
+    }
+
     const timeout = window.setTimeout(() => {
       void fetchUsersByEmail(userSearch);
     }, 250);
 
     return () => window.clearTimeout(timeout);
-  }, [fetchUsersByEmail, userSearch]);
+  }, [fetchUsersByEmail, isDialogOpen, userSearch]);
 
   useEffect(() => {
+    if (!isDialogOpen) {
+      return;
+    }
+
     const timeout = window.setTimeout(() => {
       void fetchPartnersBySearch(partnerSearch);
     }, 250);
 
     return () => window.clearTimeout(timeout);
-  }, [fetchPartnersBySearch, partnerSearch]);
+  }, [fetchPartnersBySearch, isDialogOpen, partnerSearch]);
 
   const openCreateDialog = () => {
     setEditingProfile(null);
@@ -315,8 +323,6 @@ const PerfisAcesso = () => {
     setDialogErrorMessage("");
     setSuccessMessage("");
     setIsDialogOpen(true);
-    void fetchUsersByEmail("");
-    void fetchPartnersBySearch("");
   };
 
   const openEditDialog = (profile: AccessProfile) => {
