@@ -133,6 +133,7 @@ const PerfisAcesso = () => {
   const [form, setForm] = useState<AccessProfileFormState>(emptyForm);
   const pagination = usePaginatedQuery(10);
   const { page, pageSize, total, totalPages, from, to, setPage, setPageSize, setTotal, resetPage } = pagination;
+  const isEditingOwnProfile = editingProfile?.userId === user?.id;
 
   const sortedPartnerOptions = useMemo(
     () => [...partnerOptions].sort((left, right) => left.full_name.localeCompare(right.full_name)),
@@ -362,7 +363,7 @@ const PerfisAcesso = () => {
 
     const payload = {
       user_id: form.userId,
-      role: form.role,
+      role: isEditingOwnProfile ? editingProfile.role : form.role,
       partner_id: form.partnerId,
     };
 
@@ -657,7 +658,7 @@ const PerfisAcesso = () => {
                     role: value as UserRole,
                   }))
                 }
-                disabled={isSaving}
+                disabled={isSaving || isEditingOwnProfile}
               >
                 <SelectTrigger>
                   <SelectValue />
