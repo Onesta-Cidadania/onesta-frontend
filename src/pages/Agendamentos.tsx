@@ -1,18 +1,13 @@
-import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw, ShieldCheck, Settings, Users } from "lucide-react";
+import { ArrowRight, FileText, MapPin, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import AppHeader from "@/components/AppHeader";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
-import { isRoleIn, UserRole } from "@/lib/auth/access-control";
 
 const Agendamentos = () => {
-  const navigate = useNavigate();
-  const { role, signOut, status } = useAuth();
+  const { status } = useAuth();
   const isAuthenticated = status === "authenticated";
   useAuthenticatedActivity(isAuthenticated);
-  const canAccessPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
-  const canAccessProfiles = role === UserRole.Admin;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -73,61 +68,9 @@ const Agendamentos = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/", { replace: true });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-section">
-      {/* Italian Stripe */}
-      <div className="italian-stripe w-full" />
-
-      <header className="border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="section-container flex h-16 items-center justify-between">
-          <a href="/" className="flex items-center gap-3" aria-label="Onestà Cidadania Italiana - Página Inicial">
-            <span className="font-serif text-xl md:text-2xl font-semibold text-foreground">
-              Onestà
-            </span>
-            <span className="hidden sm:inline text-muted-foreground text-sm">
-              Cidadania Italiana
-            </span>
-          </a>
-
-          <div className="flex items-center gap-2">
-            {canAccessPartners && (
-              <>
-                <Button type="button" variant="outline" size="sm" onClick={() => navigate("/consulta-clientes")} title="Consulta de Clientes">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Clientes</span>
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => navigate("/assessorias")} title="Assessorias">
-                  <Building2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Assessorias</span>
-                </Button>
-              </>
-            )}
-            {role === UserRole.Admin && (
-              <Button type="button" variant="outline" size="sm" onClick={() => navigate("/configuracoes")} title="Configurações">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Configurações</span>
-              </Button>
-            )}
-            {canAccessProfiles && (
-              <Button type="button" variant="outline" onClick={() => navigate("/perfis-acesso")}>
-                <ShieldCheck className="h-4 w-4" />
-                Perfis
-              </Button>
-            )}
-            {isAuthenticated && (
-              <Button type="button" variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                Sair
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+      <AppHeader />
       
       <div className="section-container py-16 md:py-24">
         {/* Header */}

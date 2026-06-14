@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Check, ChevronsUpDown, Loader2, LogOut, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,8 +106,7 @@ const formatDate = (value: string | null) => {
 };
 
 const PerfisAcesso = () => {
-  const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   useAuthenticatedActivity();
 
   const [profiles, setProfiles] = useState<AccessProfile[]>([]);
@@ -473,36 +472,9 @@ const PerfisAcesso = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/", { replace: true });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-section">
-      <div className="italian-stripe w-full" />
-
-      <header className="border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="section-container flex h-16 items-center justify-between">
-          <a href="/" className="flex items-center gap-3" aria-label="Onestà Cidadania Italiana - Página Inicial">
-            <span className="font-serif text-xl font-semibold text-foreground md:text-2xl">Onestà</span>
-            <span className="hidden text-sm text-muted-foreground sm:inline">Cidadania Italiana</span>
-          </a>
-
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate("/agendamentos")}>
-              Agendamentos
-            </Button>
-            <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
-              Assessorias
-            </Button>
-            <Button type="button" variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="section-container py-12 md:py-16">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

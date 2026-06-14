@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { LogOut, Settings, RotateCcw, Save, Info } from "lucide-react";
+import { Settings, RotateCcw, Save, Info } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,8 +102,7 @@ const CONFIG_FIELDS: ConfigFieldDefinition[] = [
 type FormValues = Record<string, string>;
 
 const Configuracoes = () => {
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   useAuthenticatedActivity();
 
   // State
@@ -185,11 +184,6 @@ const Configuracoes = () => {
     (key) => formValues[key] !== originalValues[key]
   );
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/", { replace: true });
-  };
-
   // Formatar data de última atualização
   const formatLastUpdate = () => {
     if (!config?.updated_at) return null;
@@ -203,31 +197,7 @@ const Configuracoes = () => {
 
   return (
     <div className="min-h-screen bg-gradient-section">
-      {/* Italian Stripe */}
-      <div className="italian-stripe w-full" />
-
-      {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="section-container flex h-16 items-center justify-between">
-          <a href="/" className="flex items-center gap-3" aria-label="Onestà Cidadania Italiana - Página Inicial">
-            <span className="font-serif text-xl font-semibold text-foreground md:text-2xl">Onestà</span>
-            <span className="hidden text-sm text-muted-foreground sm:inline">Cidadania Italiana</span>
-          </a>
-
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate("/consulta-clientes")}>
-              Clientes
-            </Button>
-            <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
-              Assessorias
-            </Button>
-            <Button type="button" variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Content */}
       <main className="section-container py-12 md:py-16">
