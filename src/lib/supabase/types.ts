@@ -93,3 +93,203 @@ export type DatabaseTable = 'services_done';
  * Operações de consulta
  */
 export type QueryOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'is' | 'in';
+
+// ============================================================
+// New Schema Types (partners, customers, services, etc.)
+// ============================================================
+
+/**
+ * Status possíveis do cliente (vinculados à tabela customer_statuses)
+ */
+export type CustomerStatus =
+  | 'EM_ANALISE'
+  | 'AGUARDANDO_CORRECAO'
+  | 'EM_ANDAMENTO'
+  | 'PAUSADO'
+  | 'CANCELADO'
+  | 'AGENDADO';
+
+/**
+ * Papel do usuário no sistema
+ */
+export type UserRoleType = 'admin' | 'partner' | 'customer';
+
+/**
+ * Estrutura da tabela partners
+ */
+export interface Partner {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Estrutura da tabela services (já existente no banco)
+ */
+export interface Service {
+  id: number;
+  service_id: number;
+  name: string;
+  url: string;
+  days_target: number | null;
+  seconds_loop: number | null;
+  timer_hour: number | null;
+  timer_minute: number | null;
+  timer_second: number | null;
+  usar_novo_html: boolean;
+  form_mode: number | null;
+  is_monitoring: boolean | null;
+  cavalo_louco: boolean;
+  weeks_minimum_calendar: number | null;
+  days_minimum_calendar: number | null;
+  days_maximum_calendar: number | null;
+  check_email_booking: boolean | null;
+  default_password: string | null;
+}
+
+/**
+ * Estrutura da tabela customer_statuses
+ */
+export interface CustomerStatusOption {
+  code: string;
+  label: string;
+  description: string | null;
+}
+
+/**
+ * Estrutura da tabela customers
+ * @description Tabela de clientes
+ */
+export interface Customer {
+  id: string;
+  customer_code: string;
+  full_name: string;
+  email: string;
+  password: string;
+  eye_color: string;
+  height_cm: number;
+  address: string;
+  marital_status: string;
+  number_of_children: number;
+  notes: string | null;
+  email_otp: string | null;
+  otp_email_password: string | null;
+  restriction_periods: unknown;
+  scheduled_at: string | null;
+  reservation_date: string | null;
+  status: string;
+  previous_status: string | null;
+  pending_issues: string | null;
+  last_attempt: string | null;
+  partner_id: string;
+  service_id: number;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Estrutura da tabela additional_applicants
+ */
+export interface AdditionalApplicant {
+  id: string;
+  customer_id: string;
+  last_name: string;
+  first_name: string;
+  birth_date: string;
+  height_cm: number | null;
+  eye_color: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+/**
+ * Estrutura da tabela user_roles
+ */
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role: UserRoleType;
+  partner_id: string | null;
+  created_at: string;
+}
+
+/**
+ * Customer com dados relacionados (join)
+ */
+export interface CustomerWithRelations extends Customer {
+  partners?: Partner;
+  services?: Service;
+}
+
+/**
+ * Filtros para busca de clientes
+ */
+export interface CustomerFilters {
+  service_id?: number;
+  name?: string;
+  email?: string;
+  status?: string | '';
+  partner_id?: string;
+  created_at_start?: Date;
+  created_at_end?: Date;
+  scheduled_at_start?: Date;
+  scheduled_at_end?: Date;
+  reservation_date_start?: Date;
+  reservation_date_end?: Date;
+}
+
+/**
+ * Resposta paginada de clientes
+ */
+export interface PaginatedCustomers {
+  customers: CustomerWithRelations[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// ============================================================
+// Configurations Types
+// ============================================================
+
+/**
+ * Estrutura da tabela configurations
+ * @description Armazena configurações globais do sistema
+ */
+export interface Configuration {
+  id: number;
+  threads_calendar: number | null;
+  threads_form: number | null;
+  otp_requests: number | null;
+  seconds_to_otp: number | null;
+  seconds_to_form: number | null;
+  minutes_to_logout: number | null;
+  seconds_to_post_booking: number | null;
+  form_send_retries: number | null;
+  minutes_to_ignore_giornaliero: number | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+/**
+ * Campos que podem ser atualizados na tabela configurations
+ */
+export type ConfigurationUpdate = Partial<Pick<Configuration,
+  | 'threads_calendar'
+  | 'threads_form'
+  | 'otp_requests'
+  | 'seconds_to_otp'
+  | 'seconds_to_form'
+  | 'minutes_to_logout'
+  | 'seconds_to_post_booking'
+  | 'form_send_retries'
+  | 'minutes_to_ignore_giornaliero'
+>> & { updated_by?: string };

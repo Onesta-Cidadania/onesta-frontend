@@ -17,9 +17,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PaginationControls } from "@/components/PaginationControls";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
+import { toast } from "@/components/ui/sonner";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { isRoleIn, UserRole } from "@/lib/auth/access-control";
 import { supabase } from "@/lib/supabase/client";
+
+/** Formata valor digitado como telefone brasileiro: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX */
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+/** Formata telefone para exibição na tabela */
+function displayPhone(phone: string | null): string {
+  if (!phone) return "—";
+  return formatPhone(phone);
+}
 
 interface Partner {
   id: string;
@@ -46,19 +64,20 @@ const Assessorias = () => {
   const { role, partnerId, user, signOut } = useAuth();
   useAuthenticatedActivity();
 
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [nameFilter, setNameFilter] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
-  const [form, setForm] = useState<PartnerFormState>(emptyForm);
-  const pagination = usePaginatedQuery(10);
-  const { page, pageSize, total, totalPages, from, to, setPage, setPageSize, setTotal, resetPage } = pagination;
+    const [partners, setPartners] = useState<Partner[]>([]);
+    const [nameFilter, setNameFilter] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+    const [form, setForm] = useState<PartnerFormState>(emptyForm);
+    const pagination = usePaginatedQuery(10);
+    const { page, pageSize, total, totalPages, from, to, setPage, setPageSize, setTotal, resetPage } = pagination;
 
-  const canCreatePartner = role === UserRole.Admin;
+
+    const canCreatePartner = role === UserRole.Admin;
   const canEditPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
 
   const filteredTitle = useMemo(() => {
@@ -69,9 +88,8 @@ const Assessorias = () => {
     return "Assessorias";
   }, [role]);
 
-  const fetchPartners = useCallback(async () => {
+  const fetchPartners = useCallback(async (filterName?: string) => {
     setIsLoading(true);
-    setErrorMessage("");
 
     try {
       let query = supabase()
@@ -82,13 +100,16 @@ const Assessorias = () => {
       if (role === UserRole.Partner) {
         if (!partnerId) {
           setPartners([]);
-          setErrorMessage("Seu usuário não possui assessoria vinculada.");
+          toast.error("Seu usuário não possui assessoria vinculada.");
           return;
         }
 
         query = query.eq("id", partnerId);
-      } else if (nameFilter.trim()) {
-        query = query.ilike("full_name", `%${nameFilter.trim()}%`);
+      } else {
+        const searchName = (filterName ?? nameFilter).trim();
+        if (searchName) {
+          query = query.ilike("full_name", `%${searchName}%`);
+        }
       }
 
       if (role === UserRole.Admin) {
@@ -98,7 +119,7 @@ const Assessorias = () => {
       const { data, error, count } = await query;
 
       if (error) {
-        setErrorMessage("Não foi possível carregar as assessorias.");
+        toast.error("Não foi possível carregar as assessorias.");
         setPartners([]);
         setTotal(0);
         return;
@@ -107,7 +128,7 @@ const Assessorias = () => {
       setPartners((data ?? []) as Partner[]);
       setTotal(role === UserRole.Admin ? count ?? 0 : data?.length ?? 0);
     } catch {
-      setErrorMessage("Não foi possível carregar as assessorias.");
+      toast.error("Não foi possível carregar as assessorias.");
       setPartners([]);
       setTotal(0);
     } finally {
@@ -115,23 +136,21 @@ const Assessorias = () => {
     }
   }, [from, nameFilter, partnerId, role, setTotal, to]);
 
+  // Buscar ao montar / quando role muda
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
+    if (role) {
       void fetchPartners();
-    }, 250);
-
-    return () => window.clearTimeout(timeout);
-  }, [fetchPartners]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, partnerId]);
 
   const openCreateDialog = () => {
     setEditingPartner(null);
     setForm(emptyForm);
-    setErrorMessage("");
-    setSuccessMessage("");
     setIsDialogOpen(true);
   };
 
@@ -140,25 +159,21 @@ const Assessorias = () => {
     setForm({
       fullName: partner.full_name,
       email: partner.email,
-      phone: partner.phone ?? "",
+      phone: formatPhone(partner.phone ?? ""),
     });
-    setErrorMessage("");
-    setSuccessMessage("");
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setErrorMessage("");
-    setSuccessMessage("");
 
     if (!form.fullName.trim()) {
-      setErrorMessage("Informe o nome da assessoria.");
+      toast.error("Informe o nome da assessoria.");
       return;
     }
 
     if (!form.email.trim()) {
-      setErrorMessage("Informe o e-mail da assessoria.");
+      toast.error("Informe o e-mail da assessoria.");
       return;
     }
 
@@ -167,7 +182,7 @@ const Assessorias = () => {
     const payload = {
       full_name: form.fullName.trim(),
       email: form.email.trim(),
-      phone: form.phone.trim() || null,
+      phone: form.phone.replace(/\D/g, "") || null,
       updated_by: user?.id ?? null,
       updated_at: new Date().toISOString(),
     };
@@ -177,11 +192,11 @@ const Assessorias = () => {
         const { error } = await supabase().from("partners").update(payload).eq("id", editingPartner.id);
 
         if (error) {
-          setErrorMessage("Não foi possível atualizar a assessoria.");
+          toast.error("Não foi possível atualizar a assessoria.");
           return;
         }
 
-        setSuccessMessage("Assessoria atualizada com sucesso.");
+        toast.success("Assessoria atualizada com sucesso.");
       } else {
         const { error } = await supabase()
           .from("partners")
@@ -191,11 +206,11 @@ const Assessorias = () => {
           });
 
         if (error) {
-          setErrorMessage("Não foi possível criar a assessoria.");
+          toast.error("Não foi possível criar a assessoria.");
           return;
         }
 
-        setSuccessMessage("Assessoria criada com sucesso.");
+        toast.success("Assessoria criada com sucesso.");
       }
 
       setIsDialogOpen(false);
@@ -203,7 +218,7 @@ const Assessorias = () => {
       setEditingPartner(null);
       await fetchPartners();
     } catch {
-      setErrorMessage(editingPartner ? "Não foi possível atualizar a assessoria." : "Não foi possível criar a assessoria.");
+      toast.error(editingPartner ? "Não foi possível atualizar a assessoria." : "Não foi possível criar a assessoria.");
     } finally {
       setIsSaving(false);
     }
@@ -212,6 +227,12 @@ const Assessorias = () => {
   const handleLogout = async () => {
     await signOut();
     navigate("/", { replace: true });
+  };
+
+  const handleFilterKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      void fetchPartners();
+    }
   };
 
   return (
@@ -226,8 +247,8 @@ const Assessorias = () => {
           </a>
 
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate("/agendamentos")}>
-              Agendamentos
+            <Button type="button" variant="outline" onClick={() => navigate("/consulta-clientes")}>
+              Clientes
             </Button>
             {role === UserRole.Admin && (
               <Button type="button" variant="outline" onClick={() => navigate("/perfis-acesso")}>
@@ -278,55 +299,58 @@ const Assessorias = () => {
 	                      setNameFilter(event.target.value);
 	                      resetPage();
 	                    }}
-	                    placeholder="Filtrar por nome da assessoria"
+	onKeyDown={handleFilterKeyDown}                    placeholder="Filtrar por nome da assessoria"
 	                    className="pl-10"
 	                  />
                 </div>
-                <Button type="button" variant="outline" onClick={() => void fetchPartners()}>
+                <Button type="button" variant="outline" onClick={() => void fetchPartners()} disabled={isLoading}>
+                  <Search className="h-4 w-4 mr-1" />
                   Buscar
                 </Button>
               </div>
             )}
 
-            {errorMessage && (
-              <p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {errorMessage}
-              </p>
-            )}
-
-            {successMessage && (
-              <p className="mb-4 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
-                {successMessage}
-              </p>
-            )}
-
-            {isLoading ? (
+            {/* Loading state: initial load (no data yet) */}
+            {isLoading && partners.length === 0 ? (
               <div className="flex min-h-48 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="text-sm">Carregando assessorias...</span>
+                </div>
+              </div>
+            ) : partners.length === 0 && !isLoading ? (
+              /* Empty state */
+              <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+                <Building2 className="h-10 w-10 opacity-30" />
+                <span className="text-sm">Nenhuma assessoria encontrada.</span>
+                <span className="text-xs">Tente ajustar o filtro de busca.</span>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead className="w-28 text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {partners.length === 0 ? (
+              /* Table with loading overlay */
+              <div className="relative">
+                {isLoading && partners.length > 0 && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/60 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 shadow-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm">Carregando...</span>
+                    </div>
+                  </div>
+                )}
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        Nenhuma assessoria encontrada.
-                      </TableCell>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>E-mail</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead className="w-28 text-right">Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    partners.map((partner) => (
+                  </TableHeader>
+                  <TableBody>
+                    {partners.map((partner) => (
                       <TableRow key={partner.id}>
                         <TableCell className="font-medium">{partner.full_name}</TableCell>
                         <TableCell>{partner.email}</TableCell>
-                        <TableCell>{partner.phone || "-"}</TableCell>
+                        <TableCell>{displayPhone(partner.phone)}</TableCell>
                         <TableCell className="text-right">
                           {canEditPartners && (
                             <Button type="button" variant="outline" size="sm" onClick={() => openEditDialog(partner)}>
@@ -336,10 +360,9 @@ const Assessorias = () => {
                           )}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    ))}
                 </TableBody>
-	              </Table>
+	              </Table></div>
 	            )}
 	            {role === UserRole.Admin && (
 	              <PaginationControls
@@ -391,8 +414,11 @@ const Assessorias = () => {
               <Input
                 id="phone"
                 value={form.phone}
-                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, phone: formatPhone(event.target.value) }))
+                }
                 disabled={isSaving}
+                placeholder="(00) 00000-0000"
               />
             </div>
 

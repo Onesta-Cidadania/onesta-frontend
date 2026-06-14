@@ -7,12 +7,14 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Agendamentos from "./pages/Agendamentos";
 import Assessorias from "./pages/Assessorias";
-import PerfisAcesso from "./pages/PerfisAcesso";
+import ConsultaClientes from "./pages/ConsultaClientes";
 import Login from "./pages/Login";
+import PerfisAcesso from "./pages/PerfisAcesso";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import NovaSenha from "./pages/NovaSenha";
 import SessionExpirationMonitor from "./components/SessionExpirationMonitor";
 import AcessoNegado from "./pages/AcessoNegado";
+import Configuracoes from "./pages/Configuracoes";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UserRole } from "./lib/auth/access-control";
@@ -34,14 +36,13 @@ const App = () => (
             <Route path="/recuperar-senha" element={<RecuperarSenha />} />
             <Route path="/nova-senha" element={<NovaSenha />} />
             <Route path="/acesso-negado" element={<AcessoNegado />} />
-            <Route
-              path="/agendamentos"
-              element={<Agendamentos />}
-            />
+            <Route path="/agendamentos" element={<Agendamentos />} />
             <Route
               path="/assessorias"
               element={
-                <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Partner]}>
+                <ProtectedRoute
+                  allowedRoles={[UserRole.Admin, UserRole.Partner]}
+                >
                   <Assessorias />
                 </ProtectedRoute>
               }
@@ -54,6 +55,26 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/consulta-clientes"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[UserRole.Admin, UserRole.Partner]}
+                >
+                  <ConsultaClientes />
+                </ProtectedRoute>
+              }
+            />
+            {
+              <Route
+                path="/configuracoes"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                    <Configuracoes />
+                  </ProtectedRoute>
+                }
+              />
+            }
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
