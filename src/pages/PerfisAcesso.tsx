@@ -59,6 +59,8 @@ interface AccessProfileRow {
   role: UserRole;
   partner_id: string | null;
   created_at: string | null;
+  user_profiles: UserOption | null;
+  partners: PartnerOption | null;
 }
 
 interface AccessProfile {
@@ -121,6 +123,7 @@ const PerfisAcesso = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [dialogErrorMessage, setDialogErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUserPopoverOpen, setIsUserPopoverOpen] = useState(false);
@@ -215,39 +218,26 @@ const PerfisAcesso = () => {
 
     try {
       const normalizedEmail = emailFilter.trim();
-      let filteredUserIds: string[] | null = null;
-
-      if (normalizedEmail) {
-        const { data: filteredUsers, error: filteredUsersError } = await supabase()
-          .from("user_profiles")
-          .select("user_id")
-          .ilike("email", `%${normalizedEmail}%`)
-          .limit(1000);
-
-        if (filteredUsersError) {
-          setErrorMessage("Não foi possível carregar os usuários.");
-          setProfiles([]);
-          setTotal(0);
-          return;
-        }
-
-        filteredUserIds = ((filteredUsers ?? []) as Array<{ user_id: string }>).map((profile) => profile.user_id);
-
-        if (filteredUserIds.length === 0) {
-          setProfiles([]);
-          setTotal(0);
-          return;
-        }
-      }
 
       let query = supabase()
         .from("user_roles")
-        .select("id,user_id,role,partner_id,created_at", { count: "exact" })
+        .select(
+          `
+            id,
+            user_id,
+            role,
+            partner_id,
+            created_at,
+            user_profiles!user_roles_user_id_fkey(user_id,email),
+            partners(id,full_name,email)
+          `,
+          { count: "exact" },
+        )
         .order("created_at", { ascending: false })
         .range(from, to);
 
-      if (filteredUserIds) {
-        query = query.in("user_id", filteredUserIds);
+      if (normalizedEmail) {
+        query = query.ilike("user_profiles.email", `%${normalizedEmail}%`).not("user_profiles", "is", null);
       }
 
       const { data, error, count } = await query;
@@ -261,42 +251,15 @@ const PerfisAcesso = () => {
 
       const rows = (data ?? []) as AccessProfileRow[];
       setTotal(count ?? 0);
-      const userIds = [...new Set(rows.map((row) => row.user_id))];
-      const partnerIds = [...new Set(rows.map((row) => row.partner_id).filter(Boolean))] as string[];
-
-      const [usersResult, partnersResult] = await Promise.all([
-        userIds.length > 0
-          ? supabase().from("user_profiles").select("user_id,email").in("user_id", userIds)
-          : Promise.resolve({ data: [], error: null }),
-        partnerIds.length > 0
-          ? supabase().from("partners").select("id,full_name,email").in("id", partnerIds)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-
-      if (usersResult.error || partnersResult.error) {
-        setErrorMessage("Não foi possível carregar os dados vinculados.");
-        setProfiles([]);
-        setTotal(0);
-        return;
-      }
-
-      const usersById = new Map(((usersResult.data ?? []) as UserOption[]).map((profile) => [profile.user_id, profile]));
-      const partnersById = new Map(
-        ((partnersResult.data ?? []) as PartnerOption[]).map((partner) => [partner.id, partner]),
-      );
-
       setProfiles(
         rows.map((row) => {
-          const userProfile = usersById.get(row.user_id);
-          const partner = row.partner_id ? partnersById.get(row.partner_id) : null;
-
           return {
             id: row.id,
             userId: row.user_id,
-            email: userProfile?.email ?? "-",
+            email: row.user_profiles?.email ?? "-",
             role: row.role,
             partnerId: row.partner_id,
-            partnerName: partner?.full_name ?? null,
+            partnerName: row.partners?.full_name ?? null,
             createdAt: row.created_at,
           };
         }),
@@ -348,6 +311,7 @@ const PerfisAcesso = () => {
     setHasMoreUserOptions(false);
     setHasMorePartnerOptions(false);
     setErrorMessage("");
+    setDialogErrorMessage("");
     setSuccessMessage("");
     setIsDialogOpen(true);
     void fetchUsersByEmail("");
@@ -374,22 +338,23 @@ const PerfisAcesso = () => {
     setHasMoreUserOptions(false);
     setHasMorePartnerOptions(false);
     setErrorMessage("");
+    setDialogErrorMessage("");
     setSuccessMessage("");
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setErrorMessage("");
+    setDialogErrorMessage("");
     setSuccessMessage("");
 
     if (!form.userId) {
-      setErrorMessage("Selecione o usuário.");
+      setDialogErrorMessage("Selecione o usuário.");
       return;
     }
 
     if (!form.partnerId) {
-      setErrorMessage("Selecione a assessoria.");
+      setDialogErrorMessage("Selecione a assessoria.");
       return;
     }
 
@@ -403,19 +368,24 @@ const PerfisAcesso = () => {
 
     try {
       if (editingProfile) {
-        const { error } = await supabase().from("user_roles").update(payload).eq("id", editingProfile.id);
+        const { data, error } = await supabase()
+          .from("user_roles")
+          .update(payload)
+          .eq("id", editingProfile.id)
+          .select("id")
+          .single();
 
-        if (error) {
-          setErrorMessage("Não foi possível atualizar o perfil de acesso.");
+        if (error || !data) {
+          setDialogErrorMessage("Não foi possível atualizar o perfil de acesso.");
           return;
         }
 
         setSuccessMessage("Perfil de acesso atualizado com sucesso.");
       } else {
-        const { error } = await supabase().from("user_roles").insert(payload);
+        const { data, error } = await supabase().from("user_roles").insert(payload).select("id").single();
 
-        if (error) {
-          setErrorMessage("Não foi possível criar o perfil. Verifique se o usuário já possui perfil.");
+        if (error || !data) {
+          setDialogErrorMessage("Não foi possível criar o perfil. Verifique se o usuário já possui perfil.");
           return;
         }
 
@@ -427,7 +397,9 @@ const PerfisAcesso = () => {
       setEditingProfile(null);
       await fetchProfiles();
     } catch {
-      setErrorMessage(editingProfile ? "Não foi possível atualizar o perfil de acesso." : "Não foi possível criar o perfil.");
+      setDialogErrorMessage(
+        editingProfile ? "Não foi possível atualizar o perfil de acesso." : "Não foi possível criar o perfil.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -603,6 +575,12 @@ const PerfisAcesso = () => {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {dialogErrorMessage && (
+              <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {dialogErrorMessage}
+              </p>
+            )}
+
             <div className="space-y-2">
               <Label>Usuário</Label>
               <Popover
