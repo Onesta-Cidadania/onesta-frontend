@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw, ShieldCheck, Settings, Users } from "lucide-react";from "lucide-react";
+import { ArrowRight, Building2, FileText, LogOut, MapPin, RefreshCw, ShieldCheck, Settings, Users } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
