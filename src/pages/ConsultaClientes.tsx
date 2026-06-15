@@ -3,10 +3,9 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { LogOut, Settings, Users } from "lucide-react";
+import { Users } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
 import { toast } from "@/components/ui/sonner";
-import { Button } from "@/components/ui/button";
 import { useAuthenticatedActivity } from "@/hooks/use-authenticated-activity";
 import { useAuth } from "@/hooks/use-auth";
 import { customerService } from "@/services/customer.service";
@@ -21,8 +20,7 @@ import type {
 } from "@/lib/supabase/types";
 
 const ConsultaClientes = () => {
-  const navigate = useNavigate();
-  const { role, partnerId, user, signOut } = useAuth();
+  const { role, partnerId, user } = useAuth();
   useAuthenticatedActivity();
 
   // State
@@ -125,11 +123,6 @@ const ConsultaClientes = () => {
     fetchCustomers(lastAppliedFilters, 1, newSize);
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/", { replace: true });
-  };
-
   // Status change handlers
   const handleStatusChange = async (customerId: string, newStatus: string) => {
     setIsUpdatingStatus(true);
@@ -199,34 +192,7 @@ const ConsultaClientes = () => {
 
   return (
     <div className="min-h-screen bg-gradient-section">
-      {/* Italian Stripe */}
-      <div className="italian-stripe w-full" />
-
-      {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="section-container flex h-16 items-center justify-between">
-          <a href="/" className="flex items-center gap-3" aria-label="Onestà Cidadania Italiana - Página Inicial">
-            <span className="font-serif text-xl font-semibold text-foreground md:text-2xl">Onestà</span>
-            <span className="hidden text-sm text-muted-foreground sm:inline">Cidadania Italiana</span>
-          </a>
-
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate("/assessorias")}>
-              Assessorias
-            </Button>
-            {role === "admin" && (
-              <Button type="button" variant="outline" onClick={() => navigate("/configuracoes")}>
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Configurações</span>
-              </Button>
-            )}
-            <Button type="button" variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Content */}
       <main className="section-container py-12 md:py-16">

@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/client";
 import { isUserRole, type UserRoleProfile } from "@/lib/auth/access-control";
@@ -51,16 +51,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserRoleProfile | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
+  const loadedProfileUserIdRef = useRef<string | null>(null);
 
-  const applySession = useCallback(async (currentSession: Session | null) => {
+  const applySession = useCallback(async (currentSession: Session | null, forceProfileReload = false) => {
     setSession(currentSession);
 
     if (!currentSession?.user) {
+      loadedProfileUserIdRef.current = null;
       setProfile(null);
       setStatus("unauthenticated");
       return;
     }
 
+    if (!forceProfileReload && loadedProfileUserIdRef.current === currentSession.user.id) {
+      return;
+    }
+
+    loadedProfileUserIdRef.current = currentSession.user.id;
     setStatus("loading");
 
     const loadedProfile = await loadUserProfile(currentSession.user.id);
@@ -81,7 +88,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    await applySession(session);
+    await applySession(session, true);
   }, [applySession, session]);
 
   const signOut = useCallback(async () => {

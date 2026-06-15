@@ -9,6 +9,7 @@ import Agendamentos from "./pages/Agendamentos";
 import Assessorias from "./pages/Assessorias";
 import ConsultaClientes from "./pages/ConsultaClientes";
 import Login from "./pages/Login";
+import PerfisAcesso from "./pages/PerfisAcesso";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import NovaSenha from "./pages/NovaSenha";
 import SessionExpirationMonitor from "./components/SessionExpirationMonitor";
@@ -43,6 +44,14 @@ const App = () => (
                   allowedRoles={[UserRole.Admin, UserRole.Partner]}
                 >
                   <Assessorias />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/perfis-acesso"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                  <PerfisAcesso />
                 </ProtectedRoute>
               }
             />
