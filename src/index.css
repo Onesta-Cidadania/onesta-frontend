@@ -148,12 +148,12 @@
   }
 
   .italian-stripe {
-    background: linear-gradient(90deg, 
-      hsl(123 32% 28%) 0%, 
-      hsl(123 32% 28%) 33.33%, 
-      hsl(0 0% 98%) 33.33%, 
-      hsl(0 0% 98%) 66.66%, 
-      hsl(355 48% 38%) 66.66%, 
+    background: linear-gradient(90deg,
+      hsl(123 32% 28%) 0%,
+      hsl(123 32% 28%) 33.33%,
+      hsl(0 0% 98%) 33.33%,
+      hsl(0 0% 98%) 66.66%,
+      hsl(355 48% 38%) 66.66%,
       hsl(355 48% 38%) 100%
     );
     height: 4px;
