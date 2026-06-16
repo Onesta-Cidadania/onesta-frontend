@@ -1,27 +1,29 @@
 /**
  * Tipos para o sistema de serviços e configurações de campos dinâmicos
+ * Usa tabela `services` (bigint) do novo schema (pistacchio)
+ *
+ * IMPORTANTE: A tabela `services` precisa das colunas code, description, active, sort_order
  */
 
 export interface Servico {
-  id: string;
-  codigo: string;
-  nome: string;
-  descricao: string | null;
-  ativo: boolean;
-  ordem: number;
-  criado_em: string;
-  atualizado_em: string;
+  id: number; // bigint na tabela services
+  code: string; // NOVO - precisa adicionar na tabela services
+  name: string;
+  description: string | null; // NOVO - precisa adicionar na tabela services
+  active: boolean; // NOVO - precisa adicionar na tabela services
+  sort_order: number; // NOVO - precisa adicionar na tabela services
+  created_at?: string;
 }
 
 export interface ConfiguracaoCampo {
   id: string;
-  servico_id: string;
-  entidade: 'titular' | 'requerente';
-  campo: string;
-  exibir: boolean;
-  obrigatorio: boolean;
-  ordem: number;
-  criado_em: string;
+  service_id: number | null; // bigint (FK → services.id) - precisa alterar de uuid para bigint
+  entity: 'titular' | 'requerente';
+  field_name: string;
+  visible: boolean;
+  required: boolean;
+  sort_order: number;
+  created_at: string;
 }
 
 /**

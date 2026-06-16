@@ -77,8 +77,8 @@ const StepTipoUsuario = ({ value, onChange, servicoSelecionado, onServicoChange 
                   </SelectTrigger>
                   <SelectContent>
                     {servicos.map((servico) => (
-                      <SelectItem key={servico.id} value={servico.codigo}>
-                        {servico.nome}
+                      <SelectItem key={servico.id} value={servico.code}>
+                        {servico.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

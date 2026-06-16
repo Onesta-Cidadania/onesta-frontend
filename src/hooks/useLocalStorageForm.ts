@@ -15,9 +15,10 @@ export interface FormData {
   // Step 0: Tipo de Usuário
   tipoUsuario: "cliente" | "assessor" | "";
   
-  // Step 0.5: Serviço Selecionado
-  servicoSelecionado: string; // Código do serviço (ex: 'sp-primeiro-passaporte')
-  servicoId: string; // ID do serviço no banco
+  // Step 0.5: Serviço e Parceiro Selecionados
+  servicoSelecionado: string; // Código do serviço (ex: 'PASS_SP')
+  servicoId: number; // ID do serviço na tabela services (bigint)
+  partnerId: string; // ID do parceiro/assessor (uuid)
 
   // Step 1: Dados do Assessor
   assessorEmail: string;
@@ -66,7 +67,8 @@ export interface FormData {
 const defaultFormData: FormData = {
   tipoUsuario: "",
   servicoSelecionado: "",
-  servicoId: "",
+  servicoId: 0,
+  partnerId: "",
   assessorEmail: "",
   assessorNome: "",
   assessorTelefone: "",
@@ -202,8 +204,9 @@ export function useLocalStorageForm() {
   const fillDemoData = useCallback((isAssessor: boolean = false) => {
     const demoData: Partial<FormData> = {
       tipoUsuario: isAssessor ? "assessor" : "cliente",
-      servicoSelecionado: "sp-primeiro-passaporte",
-      servicoId: "",
+      servicoSelecionado: "PASS_SP",
+      servicoId: 0,
+      partnerId: "",
       
       // Dados do Assessor (se aplicável)
       //assessorEmail: "assessor@exemplo.com",
@@ -218,7 +221,7 @@ export function useLocalStorageForm() {
       prenotamiSenha: "SenhaDemo123!",
       titularCep: "01310-100",
       titularEstadoCivil: "15", // Casado
-      titularDocumentoIdentidade: null,
+      titularDocumentoIdentidade: "",
       titularDocumentoIdentidadeFile: null,
       prenotamiAltura: "165",
       prenotamiCorOlhos: "castanho",
@@ -236,7 +239,7 @@ export function useLocalStorageForm() {
           dataNascimento: "2015-03-15",
           altura: "140",
           corOlhos: "castanho",
-          documentoIdentidade: null,
+          documentoIdentidade: "",
           documentoIdentidadeFile: null,
         },
         {
@@ -244,7 +247,7 @@ export function useLocalStorageForm() {
           dataNascimento: "2018-07-22",
           altura: "115",
           corOlhos: "verde",
-          documentoIdentidade: null,
+          documentoIdentidade: "",
           documentoIdentidadeFile: null,
         },
       ],

@@ -67,22 +67,21 @@ export const useConfiguracaoServico = (servicoCodigo: string = '') => {
           throw new Error(error || 'Erro ao carregar configurações');
         }
 
-        // Buscar dados do serviço a partir dos campos (o servico_id está em cada campo)
-        const servicoId = campos[0]?.servico_id || '';
+        // Buscar dados do serviço a partir dos campos (o service_id está em cada campo)
+        const servicoId = campos[0]?.service_id || 0;
 
         const configuracao: ConfiguracaoServico = {
           servico: {
             id: servicoId,
-            codigo: servicoCodigo,
-            nome: '',
-            descricao: null,
-            ativo: true,
-            ordem: 0,
-            criado_em: '',
-            atualizado_em: '',
+            code: servicoCodigo,
+            name: '',
+            description: null,
+            active: true,
+            sort_order: 0,
+            created_at: '',
           },
-          camposTitular: campos.filter(c => c.entidade === 'titular'),
-          camposRequerente: campos.filter(c => c.entidade === 'requerente'),
+          camposTitular: campos.filter(c => c.entity === 'titular'),
+          camposRequerente: campos.filter(c => c.entity === 'requerente'),
         };
 
         // Salvar no cache
@@ -129,12 +128,12 @@ export const useConfiguracaoServico = (servicoCodigo: string = '') => {
       ? configuracao.camposTitular
       : configuracao.camposRequerente;
 
-    const campoConfig = campos.find((c) => c.campo === campo);
+    const campoConfig = campos.find((c) => c.field_name === campo);
 
     // Se não tiver configuração específica, mostra o campo (comportamento padrão)
     if (!campoConfig) return true;
 
-    return campoConfig.exibir;
+    return campoConfig.visible;
   }, [state.configuracao]);
 
   /**
@@ -154,12 +153,12 @@ export const useConfiguracaoServico = (servicoCodigo: string = '') => {
       ? configuracao.camposTitular
       : configuracao.camposRequerente;
 
-    const campoConfig = campos.find((c) => c.campo === campo);
+    const campoConfig = campos.find((c) => c.field_name === campo);
 
     // Se não tiver configuração específica, não é obrigatório (comportamento padrão)
     if (!campoConfig) return false;
 
-    return campoConfig.obrigatorio;
+    return campoConfig.required;
   }, [state.configuracao]);
 
   /**
@@ -187,8 +186,8 @@ export const useConfiguracaoServico = (servicoCodigo: string = '') => {
     entidade: 'titular' | 'requerente'
   ): ConfiguracaoCampo[] => {
     return getFieldsByEntidade(entidade)
-      .filter((c) => c.exibir)
-      .sort((a, b) => a.ordem - b.ordem);
+      .filter((c) => c.visible)
+      .sort((a, b) => a.sort_order - b.sort_order);
   }, [getFieldsByEntidade]);
 
   /**
@@ -200,8 +199,8 @@ export const useConfiguracaoServico = (servicoCodigo: string = '') => {
     entidade: 'titular' | 'requerente'
   ): ConfiguracaoCampo[] => {
     return getFieldsByEntidade(entidade)
-      .filter((c) => c.exibir && c.obrigatorio)
-      .sort((a, b) => a.ordem - b.ordem);
+      .filter((c) => c.visible && c.required)
+      .sort((a, b) => a.sort_order - b.sort_order);
   }, [getFieldsByEntidade]);
 
   return {

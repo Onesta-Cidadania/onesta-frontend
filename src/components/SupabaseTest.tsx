@@ -26,7 +26,7 @@ export const SupabaseTest = () => {
     try {
       // Testa a conexão usando uma query simples
       const { error } = await supabase()
-        .from('agendamentos')
+        .from('customers')
         .select('id')
         .limit(1);
 
@@ -124,7 +124,7 @@ export const SupabaseTest = () => {
             <li>Certifique-se de que as variáveis de ambiente estão configuradas no arquivo <code className="bg-blue-100 px-1 rounded">.env.local</code></li>
             <li>Verifique se o projeto Supabase existe e está ativo</li>
             <li>Confirme se a chave pública (anon key) está correta</li>
-            <li>A tabela <code className="bg-blue-100 px-1 rounded">agendamentos</code> deve existir no banco</li>
+            <li>A tabela <code className="bg-blue-100 px-1 rounded">customers</code> deve existir no banco</li>
           </ul>
         </div>
 

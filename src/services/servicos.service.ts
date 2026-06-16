@@ -1,6 +1,10 @@
 /**
  * Serviço de Serviços e Configurações de Campos
  * Responsável por buscar serviços e suas configurações de campos do Supabase
+ * Usa tabela `services` (bigint) e `field_configurations` do novo schema (pistacchio)
+ *
+ * IMPORTANTE: A tabela `services` precisa das colunas code, description, active, sort_order
+ * A tabela `field_configurations` precisa ter service_id alterado de uuid para bigint
  */
 
 import { supabase } from '@/lib/supabase/client';
@@ -13,10 +17,10 @@ import type { Servico, ConfiguracaoCampo, ConfiguracaoServico } from '@/types/se
 export const getAllServicos = async (): Promise<{ data: Servico[] | null; error: string | null }> => {
   try {
     const { data, error } = await supabase()
-      .from('servicos')
-      .select('*')
-      .eq('ativo', true)
-      .order('ordem', { ascending: true });
+      .from('services')
+      .select('id, service_id, code, name, description, active, sort_order, created_at')
+      .eq('active', true)
+      .order('sort_order', { ascending: true });
 
     if (error) {
       console.error('Erro ao buscar serviços:', error);
@@ -35,18 +39,18 @@ export const getAllServicos = async (): Promise<{ data: Servico[] | null; error:
 
 /**
  * Busca configurações de campos para um serviço específico
- * @param servicoId - ID do serviço
+ * @param servicoId - ID do serviço (bigint)
  * @returns Configurações de campos do serviço
  */
 export const getConfiguracaoByServicoId = async (
-  servicoId: string
+  servicoId: number
 ): Promise<{ data: ConfiguracaoCampo[] | null; error: string | null }> => {
   try {
     const { data, error } = await supabase()
-      .from('configuracoes_campos')
+      .from('field_configurations')
       .select('*')
-      .eq('servico_id', servicoId)
-      .order('ordem', { ascending: true });
+      .eq('service_id', servicoId)
+      .order('sort_order', { ascending: true });
 
     if (error) {
       console.error('Erro ao buscar configurações:', error);
@@ -65,7 +69,7 @@ export const getConfiguracaoByServicoId = async (
 
 /**
  * Busca configurações de campos pelo código do serviço
- * @param codigo - Código do serviço (ex: 'sp-primeiro-passaporte')
+ * @param codigo - Código do serviço (ex: 'PASS_SP')
  * @returns Configurações de campos do serviço
  */
 export const getConfiguracaoByCodigo = async (
@@ -74,10 +78,10 @@ export const getConfiguracaoByCodigo = async (
   try {
     // Primeiro busca o serviço pelo código para obter o ID
     const { data: servico, error: servicoError } = await supabase()
-      .from('servicos')
+      .from('services')
       .select('id')
-      .eq('codigo', codigo)
-      .eq('ativo', true)
+      .eq('code', codigo)
+      .eq('active', true)
       .single();
 
     if (servicoError || !servico) {
@@ -122,8 +126,8 @@ export const getConfiguracoesCompletas = async (): Promise<{
       if (campos) {
         configuracoes.push({
           servico,
-          camposTitular: campos.filter(c => c.entidade === 'titular'),
-          camposRequerente: campos.filter(c => c.entidade === 'requerente'),
+          camposTitular: campos.filter(c => c.entity === 'titular'),
+          camposRequerente: campos.filter(c => c.entity === 'requerente'),
         });
       }
     }
@@ -148,10 +152,10 @@ export const getServicoByCodigo = async (
 ): Promise<{ data: Servico | null; error: string | null }> => {
   try {
     const { data, error } = await supabase()
-      .from('servicos')
-      .select('*')
-      .eq('codigo', codigo)
-      .eq('ativo', true)
+      .from('services')
+      .select('id, service_id, code, name, description, active, sort_order, created_at')
+      .eq('code', codigo)
+      .eq('active', true)
       .single();
 
     if (error) {
