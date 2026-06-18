@@ -11,19 +11,11 @@ export interface RequerenteData {
   documentoIdentidadeFile?: File | null;
 }
 
-export interface FormData {
-  // Step 0: Tipo de Usuário
-  tipoUsuario: "cliente" | "assessor" | "";
-  
-  // Step 0.5: Serviço e Parceiro Selecionados
+  export interface FormData {
+  // Step 0: Serviço Selecionado
   servicoSelecionado: string; // Código do serviço (ex: 'PASS_SP')
   servicoId: number; // ID do serviço na tabela services (bigint)
-  partnerId: string; // ID do parceiro/assessor (uuid)
-
-  // Step 1: Dados do Assessor
-  assessorEmail: string;
-  assessorNome: string;
-  assessorTelefone: string;
+  partnerId: string; // ID do parceiro/assessor (uuid) - obtido do contexto de autenticação
 
   // Step 2: Dados do Titular (Prenotami)
   clienteNome: string;
@@ -65,13 +57,9 @@ export interface FormData {
 }
 
 const defaultFormData: FormData = {
-  tipoUsuario: "",
   servicoSelecionado: "",
   servicoId: 0,
   partnerId: "",
-  assessorEmail: "",
-  assessorNome: "",
-  assessorTelefone: "",
   clienteNome: "",
   clientePdfFile: "",
   clientePdfFileObject: null,
@@ -102,7 +90,7 @@ const defaultFormData: FormData = {
 
 // Helper function to deserialize dates from localStorage
 function deserializeFormData(data: Partial<FormData>): FormData {
-  const result = { ...data };
+  const result: Partial<FormData> = { ...data };
   
   // Convert datasRestricao dates back to Date objects
   if (result.datasRestricao && Array.isArray(result.datasRestricao)) {
@@ -112,7 +100,8 @@ function deserializeFormData(data: Partial<FormData>): FormData {
     }));
   }
   
-  return result;
+  // Merge with defaults to ensure all required fields are present
+  return { ...defaultFormData, ...result };
 }
 
 export function useLocalStorageForm() {
@@ -203,15 +192,8 @@ export function useLocalStorageForm() {
 
   const fillDemoData = useCallback((isAssessor: boolean = false) => {
     const demoData: Partial<FormData> = {
-      tipoUsuario: isAssessor ? "assessor" : "cliente",
       servicoSelecionado: "PASS_SP",
       servicoId: 0,
-      partnerId: "",
-      
-      // Dados do Assessor (se aplicável)
-      //assessorEmail: "assessor@exemplo.com",
-      //assessorNome: "João Silva Assessor",
-      //assessorTelefone: "+55 11 98765-4321",
       
       // Dados do Titular
       clienteNome: "Maria Santos Oliveira",

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Edit, User, Users, StickyNote, Briefcase } from "lucide-react";
+import { Edit, User, Users, StickyNote, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FormData } from "@/hooks/useLocalStorageForm";
 
@@ -13,8 +13,7 @@ interface Props {
   onConfirm: () => void;
   updateField: <K extends keyof FormData>(field: K, value: FormData[K]) => void;
   stepIndices: {
-    tipo: number;
-    assessor?: number;
+    servico: number;
     titular: number;
     requerentes: number;
     observacoes: number;
@@ -43,15 +42,7 @@ const corOlhosLabels: Record<FormData["prenotamiCorOlhos"], string> = {
   "": "",
 };
 
-const tipoUsuarioLabels: Record<FormData["tipoUsuario"], string> = {
-  cliente: "Cliente",
-  assessor: "Assessor",
-  "": "",
-};
-
 const StepRevisaoConfirmacao = ({ formData, onEditStep, isSubmitting, onConfirm, updateField, stepIndices }: Props) => {
-  const isAssessor = formData.tipoUsuario === "assessor";
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -66,19 +57,19 @@ const StepRevisaoConfirmacao = ({ formData, onEditStep, isSubmitting, onConfirm,
 
       {/* Section Cards */}
       <div className="space-y-4">
-        {/* Tipo de Usuário */}
+        {/* Serviço Selecionado */}
         <Card className="border-border">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">Tipo de Usuário</CardTitle>
+                <MapPin className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">Serviço Selecionado</CardTitle>
               </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => onEditStep(stepIndices.tipo)}
+                onClick={() => onEditStep(stepIndices.servico)}
                 className="gap-2"
               >
                 <Edit className="w-4 h-4" />
@@ -88,50 +79,10 @@ const StepRevisaoConfirmacao = ({ formData, onEditStep, isSubmitting, onConfirm,
           </CardHeader>
           <CardContent>
             <span className="text-sm font-medium">
-              {tipoUsuarioLabels[formData.tipoUsuario] || "-"}
+              {formData.servicoSelecionado || "-"}
             </span>
           </CardContent>
         </Card>
-
-        {/* Dados do Assessor - only show if assessor */}
-        {isAssessor && (
-          <Card className="border-border">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">Dados do Assessor</CardTitle>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEditStep(stepIndices.assessor!)}
-                  className="gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  Editar
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 text-sm">
-                <div className="flex">
-                  <span className="text-muted-foreground w-40">Email:</span>
-                  <span className="font-medium">{formData.assessorEmail || "-"}</span>
-                </div>
-                <div className="flex">
-                  <span className="text-muted-foreground w-40">Nome/Empresa:</span>
-                  <span className="font-medium">{formData.assessorNome || "-"}</span>
-                </div>
-                <div className="flex">
-                  <span className="text-muted-foreground w-40">Telefone:</span>
-                  <span className="font-medium">{formData.assessorTelefone || "-"}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Dados do Titular */}
         <Card className="border-border">

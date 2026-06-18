@@ -1,12 +1,12 @@
 import { useMemo, useState, useCallback } from "react";
 import { useLocalStorageForm } from "@/hooks/useLocalStorageForm";
 import { salvarAgendamento } from "@/services/agendamento.service";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
   ArrowRight,
-  Briefcase,
   User,
   Users,
   StickyNote,
@@ -15,20 +15,18 @@ import {
 } from "lucide-react";
 
 import StepTipoUsuario from "@/components/agendamento/StepTipoUsuario";
-import StepDadosAssessor from "@/components/agendamento/StepDadosAssessor";
 import StepDadosTitular from "@/components/agendamento/StepDadosTitular";
 import StepRequerentesAdicionais from "@/components/agendamento/StepRequerentesAdicionais";
 import StepObservacoes from "@/components/agendamento/StepObservacoes";
 import StepRevisaoConfirmacao from "@/components/agendamento/StepRevisaoConfirmacao";
 import StepSucesso from "@/components/agendamento/StepSucesso";
 import StepIndicator from "@/components/agendamento/StepIndicator";
-import { validateRequired, validateEmail, validatePhone } from "@/lib/validations";
 
 const Agendamento = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [assessorErrors, setAssessorErrors] = useState<Record<string, string>>({});
 
   const isLocalEnvironment = import.meta.env.DEV;
+  const { partnerId } = useAuth();
 
   const {
     formData,
@@ -42,19 +40,16 @@ const Agendamento = () => {
     fillDemoData,
   } = useLocalStorageForm();
 
-  const isAssessor = formData.tipoUsuario === "assessor";
-
   const steps = useMemo(
     () => [
-      { label: "Tipo", key: "tipo", icon: User },
-      ...(isAssessor ? [{ label: "Assessor", key: "assessor", icon: Briefcase }] : []),
+      { label: "Serviço", key: "servico", icon: User },
       { label: "Titular", key: "titular", icon: User },
       { label: "Requerentes", key: "requerentes", icon: Users },
       { label: "Observações", key: "observacoes", icon: StickyNote },
       { label: "Revisão", key: "revisao", icon: CheckCircle },
       { label: "Sucesso", key: "sucesso", icon: CheckCircle },
     ],
-    [isAssessor]
+    []
   );
 
   const totalSteps = steps.length;
@@ -63,12 +58,8 @@ const Agendamento = () => {
 
   const canGoNext = () => {
     // Step-specific validation
-    if (currentKey === "tipo") {
-      return formData.tipoUsuario !== "" && formData.servicoSelecionado !== "";
-    }
-    if (currentKey === "assessor") {
-      const allFilled = formData.assessorNome?.trim() && formData.assessorEmail?.trim() && formData.assessorTelefone?.trim();
-      return !!allFilled && Object.keys(assessorErrors).length === 0;
+    if (currentKey === "servico") {
+      return formData.servicoSelecionado !== "";
     }
     // TODO: Add validations for other steps
     return true;
@@ -82,7 +73,13 @@ const Agendamento = () => {
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      const resultado = await salvarAgendamento(formData);
+      // Adicionar partnerId do contexto ao formData para salvar
+      const formDataComPartnerId = {
+        ...formData,
+        partnerId: partnerId || ''
+      };
+      
+      const resultado = await salvarAgendamento(formDataComPartnerId);
       
       if (resultado.success) {
         console.log('Agendamento salvo com sucesso:', resultado.data);
@@ -109,41 +106,7 @@ const Agendamento = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, totalSteps]);
-
-  const validateAssessorField = (field: string) => {
-    setAssessorErrors((prev) => {
-      const next = { ...prev };
-
-      if (field === "assessorNome") {
-        const error = validateRequired(formData.assessorNome || "", "nome");
-        if (error) next.assessorNome = error;
-        else delete next.assessorNome;
-      }
-
-      if (field === "assessorEmail") {
-        const error = validateEmail(formData.assessorEmail || "");
-        if (error) next.assessorEmail = error;
-        else delete next.assessorEmail;
-      }
-
-      if (field === "assessorTelefone") {
-        const error = validatePhone(formData.assessorTelefone || "");
-        if (error) next.assessorTelefone = error;
-        else delete next.assessorTelefone;
-      }
-
-      return next;
-    });
-  };
-
-  const clearAssessorError = (field: string) => {
-    setAssessorErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-  };
+  }, [formData, totalSteps, partnerId]);
 
   const handleNext = () => {
     if (currentKey === "revisao") {
@@ -163,23 +126,11 @@ const Agendamento = () => {
 
   const renderStep = () => {
     switch (currentKey) {
-      case "tipo":
+      case "servico":
         return (
           <StepTipoUsuario
-            value={formData.tipoUsuario}
-            onChange={(v) => updateField("tipoUsuario", v)}
             servicoSelecionado={formData.servicoSelecionado}
             onServicoChange={(v) => updateField("servicoSelecionado", v)}
-          />
-        );
-      case "assessor":
-        return (
-          <StepDadosAssessor
-            formData={formData}
-            updateField={updateField}
-            errors={assessorErrors}
-            onClearError={clearAssessorError}
-            onValidateField={validateAssessorField}
           />
         );
       case "titular":
@@ -227,11 +178,10 @@ const Agendamento = () => {
         );
       case "revisao": {
         const stepIndices = {
-          tipo: 0,
-          assessor: isAssessor ? 1 : undefined,
-          titular: isAssessor ? 2 : 1,
-          requerentes: isAssessor ? 3 : 2,
-          observacoes: isAssessor ? 4 : 3,
+          servico: 0,
+          titular: 1,
+          requerentes: 2,
+          observacoes: 3,
         };
         return (
           <StepRevisaoConfirmacao
