@@ -41,6 +41,7 @@ import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/lib/auth/access-control";
 import { supabase } from "@/lib/supabase/client";
+import { toast } from "@/components/ui/sonner";
 
 interface UserOption {
   user_id: string;
@@ -122,9 +123,6 @@ const PerfisAcesso = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [dialogErrorMessage, setDialogErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUserPopoverOpen, setIsUserPopoverOpen] = useState(false);
   const [isPartnerPopoverOpen, setIsPartnerPopoverOpen] = useState(false);
@@ -215,7 +213,6 @@ const PerfisAcesso = () => {
 
   const fetchProfiles = useCallback(async () => {
     setIsLoading(true);
-    setErrorMessage("");
 
     try {
       const normalizedEmail = emailFilter.trim();
@@ -244,7 +241,7 @@ const PerfisAcesso = () => {
       const { data, error, count } = await query;
 
       if (error) {
-        setErrorMessage("Não foi possível carregar os perfis de acesso.");
+        toast.error("Não foi possível carregar os perfis de acesso.");
         setProfiles([]);
         setTotal(0);
         return;
@@ -266,7 +263,7 @@ const PerfisAcesso = () => {
         }),
       );
     } catch {
-      setErrorMessage("Não foi possível carregar os perfis de acesso.");
+      toast.error("Não foi possível carregar os perfis de acesso.");
       setProfiles([]);
       setTotal(0);
     } finally {
@@ -319,9 +316,6 @@ const PerfisAcesso = () => {
     setPartnerOptions([]);
     setHasMoreUserOptions(false);
     setHasMorePartnerOptions(false);
-    setErrorMessage("");
-    setDialogErrorMessage("");
-    setSuccessMessage("");
     setIsDialogOpen(true);
   };
 
@@ -344,24 +338,19 @@ const PerfisAcesso = () => {
     );
     setHasMoreUserOptions(false);
     setHasMorePartnerOptions(false);
-    setErrorMessage("");
-    setDialogErrorMessage("");
-    setSuccessMessage("");
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setDialogErrorMessage("");
-    setSuccessMessage("");
 
     if (!form.userId) {
-      setDialogErrorMessage("Selecione o usuário.");
+      toast.error("Selecione o usuário.");
       return;
     }
 
     if (!form.partnerId) {
-      setDialogErrorMessage("Selecione a assessoria.");
+      toast.error("Selecione a assessoria.");
       return;
     }
 
@@ -383,20 +372,20 @@ const PerfisAcesso = () => {
           .single();
 
         if (error || !data) {
-          setDialogErrorMessage("Não foi possível atualizar o perfil de acesso.");
+          toast.error("Não foi possível atualizar o perfil de acesso.");
           return;
         }
 
-        setSuccessMessage("Perfil de acesso atualizado com sucesso.");
+        toast.success("Perfil de acesso atualizado com sucesso.");
       } else {
         const { data, error } = await supabase().from("user_roles").insert(payload).select("id").single();
 
         if (error || !data) {
-          setDialogErrorMessage("Não foi possível criar o perfil. Verifique se o usuário já possui perfil.");
+          toast.error("Não foi possível criar o perfil. Verifique se o usuário já possui perfil.");
           return;
         }
 
-        setSuccessMessage("Perfil de acesso criado com sucesso.");
+        toast.success("Perfil de acesso criado com sucesso.");
       }
 
       setIsDialogOpen(false);
@@ -404,9 +393,7 @@ const PerfisAcesso = () => {
       setEditingProfile(null);
       await fetchProfiles();
     } catch {
-      setDialogErrorMessage(
-        editingProfile ? "Não foi possível atualizar o perfil de acesso." : "Não foi possível criar o perfil.",
-      );
+      toast.error(editingProfile ? "Não foi possível atualizar o perfil de acesso." : "Não foi possível criar o perfil.");
     } finally {
       setIsSaving(false);
     }
@@ -417,11 +404,8 @@ const PerfisAcesso = () => {
       return;
     }
 
-    setErrorMessage("");
-    setSuccessMessage("");
-
     if (profileToDelete.userId === user?.id) {
-      setErrorMessage("Não é possível excluir seu próprio perfil de acesso.");
+      toast.error("Não é possível excluir seu próprio perfil de acesso.");
       setProfileToDelete(null);
       return;
     }
@@ -432,11 +416,11 @@ const PerfisAcesso = () => {
       const { error } = await supabase().from("user_roles").delete().eq("id", profileToDelete.id);
 
       if (error) {
-        setErrorMessage("Não foi possível excluir o perfil de acesso.");
+        toast.error("Não foi possível excluir o perfil de acesso.");
         return;
       }
 
-      setSuccessMessage("Perfil de acesso excluído com sucesso.");
+      toast.success("Perfil de acesso excluído com sucesso.");
       setProfileToDelete(null);
 
       if (profiles.length === 1 && page > 1) {
@@ -445,7 +429,7 @@ const PerfisAcesso = () => {
         await fetchProfiles();
       }
     } catch {
-      setErrorMessage("Não foi possível excluir o perfil de acesso.");
+      toast.error("Não foi possível excluir o perfil de acesso.");
     } finally {
       setIsDeleting(false);
     }
@@ -495,18 +479,6 @@ const PerfisAcesso = () => {
                 Buscar
               </Button>
             </div>
-
-            {errorMessage && (
-              <p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {errorMessage}
-              </p>
-            )}
-
-            {successMessage && (
-              <p className="mb-4 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
-                {successMessage}
-              </p>
-            )}
 
             {isLoading ? (
               <div className="flex min-h-48 items-center justify-center">
@@ -582,12 +554,6 @@ const PerfisAcesso = () => {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {dialogErrorMessage && (
-              <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {dialogErrorMessage}
-              </p>
-            )}
-
             <div className="space-y-2">
               <Label>Usuário</Label>
               <Popover
@@ -786,7 +752,14 @@ const PerfisAcesso = () => {
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Excluindo" : "Excluir"}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Excluindo
+                </>
+              ) : (
+                "Excluir"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
