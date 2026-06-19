@@ -185,10 +185,20 @@ export const partnerService = {
 
   async deletePartner(partnerId: string): Promise<ApiResponse<null>> {
     try {
-      const { error } = await supabase().from(TABLE_NAME).delete().eq("id", partnerId);
+      const { data, error } = await supabase().from(TABLE_NAME).delete().eq("id", partnerId).select("id").maybeSingle();
 
       if (error) {
         return handleError(error);
+      }
+
+      if (!data) {
+        return {
+          data: null,
+          error: {
+            message: "Nenhuma assessoria foi excluída. Verifique as permissões de exclusão.",
+            code: "NO_ROWS_DELETED",
+          },
+        };
       }
 
       return {

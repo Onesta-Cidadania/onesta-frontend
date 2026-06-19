@@ -256,10 +256,20 @@ export const accessProfileService = {
 
   async deleteProfile(id: string): Promise<ApiResponse<null>> {
     try {
-      const { error } = await supabase().from(TABLE_NAME).delete().eq("id", id);
+      const { data, error } = await supabase().from(TABLE_NAME).delete().eq("id", id).select("id").maybeSingle();
 
       if (error) {
         return handleError(error);
+      }
+
+      if (!data) {
+        return {
+          data: null,
+          error: {
+            message: "Nenhum perfil foi excluído. Verifique as permissões de exclusão.",
+            code: "NO_ROWS_DELETED",
+          },
+        };
       }
 
       return {
