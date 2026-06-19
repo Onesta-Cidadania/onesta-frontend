@@ -31,20 +31,10 @@ import {useAuth} from "@/hooks/use-auth";
 import {toast} from "@/components/ui/sonner";
 import {usePaginatedQuery} from "@/hooks/use-paginated-query";
 import {isRoleIn, UserRole} from "@/lib/auth/access-control";
-import {supabase} from "@/lib/supabase/client";
 import {formatCpfCnpj, isValidCpfCnpj, normalizeCpfCnpj} from "@/lib/validation/document";
 import {displayPhoneWithDdi, formatPhoneWithDdi, normalizePhoneWithDdi} from "@/lib/validation/phone";
-
-interface Partner {
-    id: string;
-    full_name: string;
-    email: string;
-    phone: string | null;
-    document: string | null;
-    corporate_name: string | null;
-    full_address: string | null;
-    created_at: string;
-}
+import {partnerService} from "@/services/partner.service";
+import type {Partner} from "@/lib/supabase/types";
 
 interface PartnerFormState {
     fullName: string;
@@ -78,7 +68,7 @@ const Assessorias = () => {
     const [partnerToDelete, setPartnerToDelete] = useState<Partner | null>(null);
     const [form, setForm] = useState<PartnerFormState>(emptyForm);
     const pagination = usePaginatedQuery(10);
-    const {page, pageSize, total, totalPages, from, to, setPage, setPageSize, setTotal, resetPage} = pagination;
+    const {page, pageSize, total, totalPages, setPage, setPageSize, setTotal, resetPage} = pagination;
 
 
     const canCreatePartner = role === UserRole.Admin;
@@ -96,50 +86,23 @@ const Assessorias = () => {
     const fetchPartners = useCallback(async (filterName?: string) => {
         setIsLoading(true);
 
-        try {
-            let query = supabase()
-                .from("partners")
-                .select("id,full_name,email,phone,document,corporate_name,full_address,created_at", {count: role === UserRole.Admin ? "exact" : undefined})
-                .order("full_name", {ascending: true});
+        const result = await partnerService.getPartners(filterName ?? nameFilter, page, pageSize, {role, partnerId});
 
-            if (role === UserRole.Partner) {
-                if (!partnerId) {
-                    setPartners([]);
-                    toast.error("Seu usuário não possui assessoria vinculada.");
-                    return;
-                }
-
-                query = query.eq("id", partnerId);
-            } else {
-                const searchName = (filterName ?? nameFilter).trim();
-                if (searchName) {
-                    query = query.ilike("full_name", `%${searchName}%`);
-                }
-            }
-
-            if (role === UserRole.Admin) {
-                query = query.range(from, to);
-            }
-
-            const {data, error, count} = await query;
-
-            if (error) {
-                toast.error("Não foi possível carregar as assessorias.");
-                setPartners([]);
-                setTotal(0);
-                return;
-            }
-
-            setPartners((data ?? []) as Partner[]);
-            setTotal(role === UserRole.Admin ? count ?? 0 : data?.length ?? 0);
-        } catch {
+        if (result.error) {
             toast.error("Não foi possível carregar as assessorias.");
             setPartners([]);
             setTotal(0);
-        } finally {
-            setIsLoading(false);
+        } else if (result.data) {
+            if (role === UserRole.Partner && !partnerId && result.data.partners.length === 0) {
+                toast.error("Seu usuário não possui assessoria vinculada.");
+            }
+
+            setPartners(result.data.partners);
+            setTotal(result.data.total);
         }
-    }, [from, nameFilter, partnerId, role, setTotal, to]);
+
+        setIsLoading(false);
+    }, [nameFilter, page, pageSize, partnerId, role, setTotal]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -171,24 +134,14 @@ const Assessorias = () => {
     };
 
     const validateUniqueDocument = async (document: string) => {
-        let query = supabase()
-            .from("partners")
-            .select("id")
-            .ilike("document", document)
-            .limit(1);
+        const result = await partnerService.isDocumentAvailable(document, editingPartner?.id);
 
-        if (editingPartner) {
-            query = query.neq("id", editingPartner.id);
-        }
-
-        const {data, error} = await query;
-
-        if (error) {
+        if (result.error) {
             toast.error("Não foi possível validar o documento.");
             return false;
         }
 
-        if ((data ?? []).length > 0) {
+        if (!result.data) {
             toast.error("Já existe uma assessoria com este documento.");
             return false;
         }
@@ -242,23 +195,21 @@ const Assessorias = () => {
             }
 
             if (editingPartner) {
-                const {error} = await supabase().from("partners").update(payload).eq("id", editingPartner.id);
+                const result = await partnerService.updatePartner(editingPartner.id, payload);
 
-                if (error) {
+                if (result.error) {
                     toast.error("Não foi possível atualizar a assessoria.");
                     return;
                 }
 
                 toast.success("Assessoria atualizada com sucesso.");
             } else {
-                const {error} = await supabase()
-                    .from("partners")
-                    .insert({
-                        ...payload,
-                        created_by: user?.id ?? null,
-                    });
+                const result = await partnerService.createPartner({
+                    ...payload,
+                    created_by: user?.id ?? null,
+                });
 
-                if (error) {
+                if (result.error) {
                     toast.error("Não foi possível criar a assessoria.");
                     return;
                 }
@@ -285,36 +236,29 @@ const Assessorias = () => {
         setIsDeleting(true);
 
         try {
-            const [{count: userRolesCount, error: userRolesError}, {count: customersCount, error: customersError}] =
-                await Promise.all([
-                    supabase()
-                        .from("user_roles")
-                        .select("id", {count: "exact", head: true})
-                        .eq("partner_id", partnerToDelete.id),
-                    supabase()
-                        .from("customers")
-                        .select("id", {count: "exact", head: true})
-                        .eq("partner_id", partnerToDelete.id),
-                ]);
+            const [userRolesResult, customersResult] = await Promise.all([
+                partnerService.hasLinkedUserRoles(partnerToDelete.id),
+                partnerService.hasLinkedCustomers(partnerToDelete.id),
+            ]);
 
-            if (userRolesError || customersError) {
+            if (userRolesResult.error || customersResult.error) {
                 toast.error("Não foi possível validar os vínculos da assessoria.");
                 return;
             }
 
-            if ((userRolesCount ?? 0) > 0) {
+            if (userRolesResult.data) {
                 toast.error("Não é possível excluir assessoria vinculada a usuários.");
                 return;
             }
 
-            if ((customersCount ?? 0) > 0) {
+            if (customersResult.data) {
                 toast.error("Não é possível excluir assessoria vinculada a clientes.");
                 return;
             }
 
-            const {error} = await supabase().from("partners").delete().eq("id", partnerToDelete.id);
+            const result = await partnerService.deletePartner(partnerToDelete.id);
 
-            if (error) {
+            if (result.error) {
                 toast.error("Não foi possível excluir a assessoria.");
                 return;
             }
