@@ -9,7 +9,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import statusChangeRoutes from './api/emails/routes/statusChangeRoutes.js';
+import statusChangeRoutes from './lib/emails/routes/statusChangeRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
