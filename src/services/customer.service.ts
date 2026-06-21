@@ -20,6 +20,58 @@ import { startOfDay, endOfDay, formatISO } from 'date-fns';
 const TABLE_NAME = 'customers';
 
 /**
+ * Envia email de notificação de alteração de status
+ * @param customerData - Dados do cliente e da alteração
+ * @param userRole - Role do usuário que fez a alteração
+ */
+async function sendStatusChangeEmail(
+  customerData: {
+    customerName: string;
+    customerCode: string;
+    customerEmail: string;
+    previousStatus: string;
+    newStatus: string;
+    userEmail: string;
+  },
+  userRole: UserRoleEnum | null
+): Promise<void> {
+  try {
+    // Não enviar email se for Admin
+    if (userRole === UserRoleEnum.Admin) {
+      console.log('ℹ️  Alteração por Admin - email não enviado');
+      return;
+    }
+
+    // Em produção usa /api (path relativo), em desenvolvimento usa localhost:3001/api
+    const apiBaseUrl = import.meta.env.MODE === 'production'
+      ? '/api'
+      : 'http://localhost:3001/api';
+
+    const response = await fetch(`${apiBaseUrl}/emails/status-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...customerData,
+        userRole: userRole || 'Unknown'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.warn('⚠️  Erro ao enviar email de notificação:', errorData);
+    } else {
+      const result = await response.json();
+      console.log('✅ Email de notificação enviado:', result);
+    }
+  } catch (error) {
+    // Erro no envio de email não deve interromper o fluxo principal
+    console.warn('⚠️  Falha ao enviar email de notificação:', error);
+  }
+}
+
+/**
  * Trata erros do Supabase e retorna um formato padronizado
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -223,13 +275,23 @@ export const customerService = {
    * Atualiza o status de um cliente individual
    * @param customerId - ID do cliente
    * @param newStatus - Novo status
+   * @param currentStatus - Status atual
+   * @param updatedBy - Email do usuário que está atualizando
+   * @param customerData - Dados adicionais do cliente para envio de email
+   * @param userRole - Role do usuário que está atualizando
    * @returns Promise com resposta
    */
   async updateCustomerStatus(
     customerId: string,
     newStatus: string,
     currentStatus?: string,
-    updatedBy?: string
+    updatedBy?: string,
+    customerData?: {
+      customerName: string;
+      customerCode: string;
+      customerEmail: string;
+    },
+    userRole?: UserRoleEnum | null
   ): Promise<ApiResponse<{ id: string; status: string }>> {
     try {
       const updateData: Record<string, unknown> = {
@@ -248,6 +310,22 @@ export const customerService = {
 
       if (error) {
         return handleError(error);
+      }
+
+      // Enviar email de notificação após atualização bem-sucedida
+      if (customerData && updatedBy && currentStatus) {
+        // Email enviado de forma assíncrona, não bloqueia o fluxo principal
+        sendStatusChangeEmail(
+          {
+            customerName: customerData.customerName,
+            customerCode: customerData.customerCode,
+            customerEmail: customerData.customerEmail,
+            previousStatus: currentStatus,
+            newStatus: newStatus,
+            userEmail: updatedBy,
+          },
+          userRole || null
+        );
       }
 
       return {

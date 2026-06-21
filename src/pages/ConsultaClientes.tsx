@@ -130,7 +130,18 @@ const ConsultaClientes = () => {
     const customer = customers.find((c) => c.id === customerId);
     const currentStatus = customer?.status;
 
-    const result = await customerService.updateCustomerStatus(customerId, newStatus, currentStatus, user?.email);
+    const result = await customerService.updateCustomerStatus(
+      customerId, 
+      newStatus, 
+      currentStatus, 
+      user?.email,
+      {
+        customerName: customer?.full_name || '',
+        customerCode: customer?.customer_code || '',
+        customerEmail: customer?.email || '',
+      },
+      role
+    );
 
     if (result.error) {
       toast.error("Erro ao atualizar status: " + result.error.message);
