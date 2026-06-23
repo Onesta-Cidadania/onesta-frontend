@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { customerService } from "@/services/customer.service";
 import { CustomerFiltersPanel } from "@/components/customers/CustomerFilters";
 import { CustomerTable } from "@/components/customers/CustomerTable";
+import { Card, CardContent } from "@/components/ui/card";
 import type {
   CustomerFilters,
   CustomerWithRelations,
@@ -167,10 +168,15 @@ const ConsultaClientes = () => {
 
     const items = ids.map((id) => {
       const customer = customers.find((c) => c.id === id);
-      return { id, currentStatus: customer?.status ?? "" };
+      return { 
+        id, 
+        currentStatus: customer?.status ?? "",
+        customerCode: customer?.customer_code,
+        customerEmail: customer?.email
+      };
     });
 
-    const result = await customerService.batchUpdateCustomerStatus(items, newStatus, user?.email);
+    const result = await customerService.batchUpdateCustomerStatus(items, newStatus, user?.email, role);
 
     if (result.error) {
       toast.error(result.error.message || "Erro ao atualizar status em lote.");
@@ -277,27 +283,29 @@ const ConsultaClientes = () => {
         />
 
         {/* Table */}
-        <div className="mt-6">
-          <CustomerTable
-            customers={customers}
-            total={total}
-            page={page}
-            pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            isLoading={isLoading}
-            statusOptions={statusOptions}
-            role={role}
-            selectedIds={selectedIds}
-            onSelectionChange={setSelectedIds}
-            onStatusChange={handleStatusChange}
-            onBatchStatusChange={handleBatchStatusChange}
-            isUpdatingStatus={isUpdatingStatus}
-            onPriorityChange={handlePriorityChange}
-            isUpdatingPriority={isUpdatingPriority}
-          />
-        </div>
+        <Card className="mt-6">
+          <CardContent className="p-6">
+            <CustomerTable
+              customers={customers}
+              total={total}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              isLoading={isLoading}
+              statusOptions={statusOptions}
+              role={role}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              onStatusChange={handleStatusChange}
+              onBatchStatusChange={handleBatchStatusChange}
+              isUpdatingStatus={isUpdatingStatus}
+              onPriorityChange={handlePriorityChange}
+              isUpdatingPriority={isUpdatingPriority}
+            />
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

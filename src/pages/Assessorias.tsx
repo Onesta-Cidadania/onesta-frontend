@@ -138,12 +138,13 @@ const Assessorias = () => {
         window.scrollTo(0, 0);
     }, []);
 
+    // Buscar quando role, partnerId, page ou pageSize mudam
     useEffect(() => {
         if (role) {
             void fetchPartners();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [role, partnerId]);
+    }, [role, partnerId, page, pageSize]);
 
     const openCreateDialog = () => {
         setEditingPartner(null);

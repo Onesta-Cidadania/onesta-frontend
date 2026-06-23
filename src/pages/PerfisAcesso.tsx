@@ -508,30 +508,46 @@ const PerfisAcesso = () => {
               </p>
             )}
 
-            {isLoading ? (
-              <div className="flex min-h-48 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            {/* Loading state: initial load (no data yet) */}
+            {isLoading && profiles.length === 0 ? (
+              <div className="bg-white rounded-xl border shadow-sm p-8">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="text-sm">Carregando perfis de acesso...</span>
+                </div>
+              </div>
+            ) : profiles.length === 0 && !isLoading ? (
+              /* Empty state */
+              <div className="bg-white rounded-xl border shadow-sm p-8">
+                <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <ShieldCheck className="h-10 w-10 opacity-30" />
+                  <span className="text-sm">Nenhum perfil de acesso encontrado.</span>
+                  <span className="text-xs">Tente ajustar o filtro de busca.</span>
+                </div>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Perfil</TableHead>
-                    <TableHead>Assessoria</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead className="w-48 text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {profiles.length === 0 ? (
+              /* Table with loading overlay */
+              <div className="relative">
+                {isLoading && profiles.length > 0 && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/60 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 shadow-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm">Carregando...</span>
+                    </div>
+                  </div>
+                )}
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                        Nenhum perfil de acesso encontrado.
-                      </TableCell>
+                      <TableHead>E-mail</TableHead>
+                      <TableHead>Perfil</TableHead>
+                      <TableHead>Assessoria</TableHead>
+                      <TableHead>Criado em</TableHead>
+                      <TableHead className="w-48 text-right">Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    profiles.map((profile) => (
+                  </TableHeader>
+                  <TableBody>
+                    {profiles.map((profile) => (
                       <TableRow key={profile.id}>
                         <TableCell className="font-medium">{profile.email}</TableCell>
                         <TableCell>{accessProfileRoleLabels[profile.role]}</TableCell>
@@ -556,10 +572,10 @@ const PerfisAcesso = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
 
             <PaginationControls

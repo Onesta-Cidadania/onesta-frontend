@@ -7,6 +7,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckSquare, Star, Users, X } from "lucide-react";
 import { UserRole } from "@/lib/auth/access-control";
+import { PaginationControls } from "@/components/PaginationControls";
 import {
   Table,
   TableBody,
@@ -191,66 +192,25 @@ export function CustomerTable({
   // Initial load (no data yet)
   if (isLoading && customers.length === 0) {
     return (
-      <div className="bg-white rounded-xl border shadow-sm p-8">
-        <div className="flex items-center justify-center gap-2 text-muted-foreground">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm">Carregando clientes...</span>
-        </div>
+      <div className="flex items-center justify-center gap-2 text-muted-foreground p-8">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm">Carregando clientes...</span>
       </div>
     );
   }
 
   if (!isLoading && customers.length === 0) {
     return (
-      <div className="bg-white rounded-xl border shadow-sm p-8">
-        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-          <Users className="h-10 w-10 opacity-30" />
-          <span className="text-sm">Nenhum cliente encontrado.</span>
-          <span className="text-xs">Tente ajustar os filtros de busca.</span>
-        </div>
+      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground p-8">
+        <Users className="h-10 w-10 opacity-30" />
+        <span className="text-sm">Nenhum cliente encontrado.</span>
+        <span className="text-xs">Tente ajustar os filtros de busca.</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border shadow-sm relative">
-      {/* Loading overlay for subsequent loads (when data already exists) */}
-      {isLoading && customers.length > 0 && (
-        <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-sm rounded-xl flex items-center justify-center">
-          <div className="flex items-center gap-2 text-muted-foreground bg-white rounded-lg px-4 py-2 shadow-sm border">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="text-sm">Carregando...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Header com contagem */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">
-            {total} {total === 1 ? "registro encontrado" : "registros encontrados"}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Itens por página:</span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(v) => onPageSizeChange(Number(v))}
-          >
-            <SelectTrigger className="w-[70px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    <>
 
       {/* Batch Action Bar */}
       {hasSelection && (
@@ -298,7 +258,16 @@ export function CustomerTable({
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
+        {/* Loading overlay for subsequent loads (when data already exists) */}
+        {isLoading && customers.length > 0 && (
+          <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+            <div className="flex items-center gap-2 text-muted-foreground bg-white rounded-lg px-4 py-2 shadow-sm border">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-sm">Carregando...</span>
+            </div>
+          </div>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
@@ -320,17 +289,17 @@ export function CustomerTable({
               </TableHead>
               <TableHead className="w-[80px]">Código</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden lg:table-cell">Serviço</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Serviço</TableHead>
               {isAdmin && (
-                <TableHead className="hidden lg:table-cell">Assessoria</TableHead>
+                <TableHead>Assessoria</TableHead>
               )}
               <TableHead className="text-center">Prioritário</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Inclusão</TableHead>
-              <TableHead className="hidden lg:table-cell">Agendamento</TableHead>
-              <TableHead className="hidden xl:table-cell">Últ. Tentativa</TableHead>
-              <TableHead className="hidden xl:table-cell">Reserva</TableHead>
+              <TableHead>Inclusão</TableHead>
+              <TableHead>Agendamento</TableHead>
+              <TableHead>Últ. Tentativa</TableHead>
+              <TableHead>Reserva</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -385,19 +354,19 @@ export function CustomerTable({
                     </div>
                   </TableCell>
 
-                  {/* Email (hidden em mobile) */}
-                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                  {/* Email */}
+                  <TableCell className="text-sm text-muted-foreground">
                     {customer.email}
                   </TableCell>
 
                   {/* Serviço */}
-                  <TableCell className="hidden lg:table-cell text-sm">
+                  <TableCell className="text-sm">
                     <div className="text-sm">{serviceName}</div>
                   </TableCell>
 
                   {/* Assessoria (só para Admin) */}
                   {isAdmin && (
-                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground">
                       {partnerName}
                     </TableCell>
                   )}
@@ -467,22 +436,22 @@ export function CustomerTable({
                   </TableCell>
 
                   {/* Data Inclusão */}
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {formatDateSafe(customer.created_at)}
                   </TableCell>
 
                   {/* Data Agendamento */}
-                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {formatDateSafe(customer.scheduled_at)}
                   </TableCell>
 
                   {/* Última Tentativa */}
-                  <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {formatDateSafe(customer.last_attempt)}
                   </TableCell>
 
                   {/* Data Reserva */}
-                  <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {formatDateSafe(customer.reservation_date)}
                   </TableCell>
                 </TableRow>
@@ -494,51 +463,18 @@ export function CustomerTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 p-4 border-t">
-          <span className="text-xs text-muted-foreground">
-            Página {page} de {totalPages}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(1)}
-              disabled={page <= 1}
-              className="h-8 text-xs"
-            >
-              Primeira
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(page - 1)}
-              disabled={page <= 1}
-              className="h-8 text-xs"
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(page + 1)}
-              disabled={page >= totalPages}
-              className="h-8 text-xs"
-            >
-              Próxima
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(totalPages)}
-              disabled={page >= totalPages}
-              className="h-8 text-xs"
-            >
-              Última
-            </Button>
-          </div>
+        <div className="mt-6">
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+          />
         </div>
       )}
-    </div>
+    </>
   );
 }
 
