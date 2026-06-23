@@ -122,10 +122,33 @@ export interface Partner {
   full_name: string;
   email: string;
   phone: string | null;
+  document: string | null;
+  corporate_name: string | null;
+  full_address: string | null;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PartnerPayload {
+  full_name: string;
+  email: string;
+  phone: string | null;
+  document: string;
+  corporate_name: string | null;
+  full_address: string | null;
+  updated_by: string | null;
+  updated_at: string;
+  created_by?: string | null;
+}
+
+export interface PaginatedPartners {
+  partners: Partner[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 /**
@@ -218,6 +241,41 @@ export interface UserRole {
   role: UserRoleType;
   partner_id: string | null;
   created_at: string;
+}
+
+export interface UserOption {
+  user_id: string;
+  email: string;
+}
+
+export interface PartnerOption {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
+export interface AccessProfile {
+  id: string;
+  userId: string;
+  email: string;
+  role: UserRoleType;
+  partnerId: string | null;
+  partnerName: string | null;
+  createdAt: string | null;
+}
+
+export interface AccessProfilePayload {
+  user_id: string;
+  role: UserRoleType;
+  partner_id: string;
+}
+
+export interface PaginatedAccessProfiles {
+  profiles: AccessProfile[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 /**
