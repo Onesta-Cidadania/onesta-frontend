@@ -5,6 +5,11 @@
 
 import nodemailer from 'nodemailer';
 
+// Remetente com nome de exibição "Onesta" + email de EMAIL_USER.
+// O Gmail exige que o "from" seja o mesmo email autenticado, então
+// usamos apenas EMAIL_USER e adicionamos o prefixo "Onesta" aqui.
+const EMAIL_FROM = `Onesta <${process.env.EMAIL_USER}>`;
+
 // Handler da Serverless Function
 export default async function handler(req, res) {
   // Configurar CORS
@@ -198,7 +203,7 @@ export default async function handler(req, res) {
                 </tr>
               </table>
               <h3 style="margin:25px 0 10px 0; font-size:14px; color:#111827; font-weight:600;">
-                🧑‍💼 Realizado por
+                🧑 Realizado por
               </h3>
               <p style="margin:0; color:#374151; font-size:14px; line-height:1.8;">
                 <b>Tipo:</b> ${roleLabel}<br>
@@ -243,7 +248,7 @@ export default async function handler(req, res) {
 </html>`;
 
     const mailOptions = {
-      from: process.env.EMAIL_FROM,
+      from: EMAIL_FROM,
       to: process.env.EMAIL_DESTINO,
       subject: `Alteração de Status - ${customerName} - ${customerCode || 'N/A'}`,
       html,

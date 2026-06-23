@@ -35,6 +35,7 @@ const ConsultaClientes = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
@@ -201,6 +202,39 @@ const ConsultaClientes = () => {
     setIsUpdatingStatus(false);
   };
 
+  // Priority change handler (individual)
+  const handlePriorityChange = async (customerId: string, priority: boolean) => {
+    const customer = customers.find((c) => c.id === customerId);
+    const previousPriority = customer?.priority ?? false;
+
+    // Optimistic update
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === customerId ? { ...c, priority } : c))
+    );
+
+    setIsUpdatingPriority(true);
+
+    const result = await customerService.updateCustomerPriority(
+      customerId,
+      priority,
+      user?.email
+    );
+
+    if (result.error) {
+      toast.error("Erro ao atualizar prioridade: " + result.error.message);
+      // Revert on error
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c.id === customerId ? { ...c, priority: previousPriority } : c
+        )
+      );
+    } else {
+      toast.success(priority ? "Cliente marcado como prioritário." : "Prioridade removida.");
+    }
+
+    setIsUpdatingPriority(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-section">
       <AppHeader />
@@ -260,6 +294,8 @@ const ConsultaClientes = () => {
             onStatusChange={handleStatusChange}
             onBatchStatusChange={handleBatchStatusChange}
             isUpdatingStatus={isUpdatingStatus}
+            onPriorityChange={handlePriorityChange}
+            isUpdatingPriority={isUpdatingPriority}
           />
         </div>
       </main>

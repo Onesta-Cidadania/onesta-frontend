@@ -5,7 +5,7 @@
 
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckSquare, Users, X } from "lucide-react";
+import { CheckSquare, Star, Users, X } from "lucide-react";
 import { UserRole } from "@/lib/auth/access-control";
 import {
   Table,
@@ -69,6 +69,8 @@ interface CustomerTableProps {
   onStatusChange?: (customerId: string, newStatus: string) => void;
   onBatchStatusChange?: (ids: string[], newStatus: string) => void;
   isUpdatingStatus?: boolean;
+  onPriorityChange?: (customerId: string, priority: boolean) => void;
+  isUpdatingPriority?: boolean;
 }
 
 function formatDateSafe(dateStr: string | null | undefined): string {
@@ -125,9 +127,12 @@ export function CustomerTable({
   onStatusChange,
   onBatchStatusChange,
   isUpdatingStatus,
+  onPriorityChange,
+  isUpdatingPriority,
 }: CustomerTableProps) {
   const isAdmin = role === UserRole.Admin;
   const isPartner = role === UserRole.Partner;
+  const canEditPriority = isAdmin || isPartner;
 
   // Derived state
   const allOnPageSelected =
@@ -169,6 +174,11 @@ export function CustomerTable({
   // Status change handler (individual)
   const handleStatusSelect = (customerId: string, newStatus: string) => {
     onStatusChange?.(customerId, newStatus);
+  };
+
+  // Priority toggle handler (individual)
+  const handlePriorityToggle = (customerId: string, currentPriority: boolean) => {
+    onPriorityChange?.(customerId, !currentPriority);
   };
 
   // Batch status change handler
@@ -315,6 +325,7 @@ export function CustomerTable({
               {isAdmin && (
                 <TableHead className="hidden lg:table-cell">Assessoria</TableHead>
               )}
+              <TableHead className="text-center">Prioritário</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden md:table-cell">Inclusão</TableHead>
               <TableHead className="hidden lg:table-cell">Agendamento</TableHead>
@@ -390,6 +401,36 @@ export function CustomerTable({
                       {partnerName}
                     </TableCell>
                   )}
+
+                  {/* Prioritário */}
+                  <TableCell className="text-center">
+                    {canEditPriority ? (
+                      <button
+                        type="button"
+                        onClick={() => handlePriorityToggle(customer.id, customer.priority)}
+                        disabled={isUpdatingPriority}
+                        className="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={customer.priority ? "Remover prioridade" : "Marcar como prioritário"}
+                        aria-label={customer.priority ? "Remover prioridade" : "Marcar como prioritário"}
+                      >
+                        <Star
+                          className={`h-4 w-4 ${
+                            customer.priority
+                              ? "fill-amber-400 text-amber-400"
+                              : "fill-none text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    ) : (
+                      <Star
+                        className={`h-4 w-4 mx-auto ${
+                          customer.priority
+                            ? "fill-amber-400 text-amber-400"
+                            : "fill-none text-muted-foreground opacity-40"
+                        }`}
+                      />
+                    )}
+                  </TableCell>
 
                   {/* Status */}
                   <TableCell>

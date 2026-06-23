@@ -114,7 +114,7 @@ export const customerService = {
       let query = supabase()
         .from(TABLE_NAME)
         .select(
-          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,last_attempt,created_at,partner_id,service_id,partners(id,full_name),services(id,name)',
+          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,last_attempt,created_at,partner_id,service_id,priority,partners(id,full_name),services(id,name)',
           { count: 'exact' }
         )
         .order('created_at', { ascending: false });
@@ -138,6 +138,10 @@ export const customerService = {
 
       if (filters.partner_id) {
         query = query.eq('partner_id', filters.partner_id);
+      }
+
+      if (filters.priority !== undefined) {
+        query = query.eq('priority', filters.priority);
       }
 
       // Filtro de data de inclusão (created_at) - sem considerar horário
@@ -330,6 +334,45 @@ export const customerService = {
 
       return {
         data: data as unknown as { id: string; status: string },
+        error: null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Atualiza a prioridade de um cliente individual
+   * @param customerId - ID do cliente
+   * @param priority - Nova prioridade (true = prioritário)
+   * @param updatedBy - Email do usuário que está atualizando
+   * @returns Promise com resposta
+   */
+  async updateCustomerPriority(
+    customerId: string,
+    priority: boolean,
+    updatedBy?: string
+  ): Promise<ApiResponse<{ id: string; priority: boolean }>> {
+    try {
+      const updateData: Record<string, unknown> = {
+        priority,
+        updated_at: new Date().toISOString(),
+        ...(updatedBy ? { updated_by: updatedBy } : {}),
+      };
+
+      const { data, error } = await supabase()
+        .from(TABLE_NAME)
+        .update(updateData)
+        .eq('id', customerId)
+        .select('id,priority')
+        .single();
+
+      if (error) {
+        return handleError(error);
+      }
+
+      return {
+        data: data as unknown as { id: string; priority: boolean },
         error: null,
       };
     } catch (error) {
