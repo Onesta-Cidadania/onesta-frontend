@@ -1,5 +1,5 @@
 /**
- * Serverless Function para envio de email de alteração de status
+ * Serverless Function para envio de email de alteração de prioridade
  * Executado na Vercel como Serverless Function
  * 
  * Sempre usa o formato de tabela (lote), mesmo para 1 cliente.
@@ -38,8 +38,8 @@ export default async function handler(req, res) {
       customerName,
       customerCode,
       customerEmail,
-      previousStatus,
-      newStatus,
+      previousPriority,
+      newPriority,
       userEmail,
       userRole,
       changes // Array para alterações em lote
@@ -54,8 +54,8 @@ export default async function handler(req, res) {
       normalizedChanges = [{
         customerCode: customerCode || '',
         customerEmail: customerEmail || '',
-        previousStatus: previousStatus || '',
-        newStatus: newStatus || '',
+        previousPriority: previousPriority,
+        newPriority: newPriority,
       }];
     }
 
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
       console.log('Erro: Dados incompletos no body', req.body);
       return res.status(400).json({ 
         success: false, 
-        error: 'Campos obrigatórios: changes[] (ou customerCode/customerEmail/previousStatus/newStatus), userEmail, userRole' 
+        error: 'Campos obrigatórios: changes[] (ou customerCode/customerEmail/previousPriority/newPriority), userEmail, userRole' 
       });
     }
 
@@ -99,25 +99,16 @@ export default async function handler(req, res) {
       minute: '2-digit'
     });
 
-    // Mapeamento de cores por status
-    const STATUS_COLOR_MAP = {
-      EM_ANALISE: { bg: '#FFF3CD', text: '#856404', border: '#FFC107' },
-      AGUARDANDO_CORRECAO: { bg: '#F8D7DA', text: '#721C24', border: '#DC3545' },
-      EM_ANDAMENTO: { bg: '#D1ECF1', text: '#0C5460', border: '#03084C' },
-      PAUSADO: { bg: '#F8D7DA', text: '#721C24', border: '#DC3545' },
-      CANCELADO: { bg: '#F8F9FA', text: '#383D41', border: '#6C757D' },
-      AGENDADO: { bg: '#D4EDDA', text: '#155724', border: '#315E33' }
-    };
-
-    const getStatusColors = (status) => {
-      const normalizedStatus = (status || '').toUpperCase().trim();
-      return STATUS_COLOR_MAP[normalizedStatus] || { bg: '#F8F9FA', text: '#383D41', border: '#6C757D' };
-    };
-
     // Gerar linhas da tabela
     const rows = normalizedChanges.map(change => {
-      const prevColors = getStatusColors(change.previousStatus);
-      const newColors = getStatusColors(change.newStatus);
+      const prevBadge = change.previousPriority 
+        ? '<span style="background:#FEF3C7; color:#92400E; padding:4px 8px; border-radius:4px; font-weight:600; font-size:12px;">⭐ Prioritário</span>'
+        : '<span style="background:#F3F4F6; color:#6B7280; padding:4px 8px; border-radius:4px; font-weight:600; font-size:12px;">Não Prioritário</span>';
+      
+      const newBadge = change.newPriority
+        ? '<span style="background:#FEF3C7; color:#92400E; padding:4px 8px; border-radius:4px; font-weight:600; font-size:12px;">⭐ Prioritário</span>'
+        : '<span style="background:#F3F4F6; color:#6B7280; padding:4px 8px; border-radius:4px; font-weight:600; font-size:12px;">Não Prioritário</span>';
+      
       return `
         <tr style="border-bottom:1px solid #e5e7eb;">
           <td style="padding:12px; color:#374151; font-size:14px;">
@@ -127,27 +118,23 @@ export default async function handler(req, res) {
             ${change.customerEmail || 'Não informado'}
           </td>
           <td style="padding:12px; font-size:14px;">
-            <span style="background:${prevColors.bg}; color:${prevColors.text}; padding:4px 8px; border-radius:4px; font-weight:600; font-size:12px;">
-              ${change.previousStatus}
-            </span>
+            ${prevBadge}
           </td>
           <td style="padding:12px; font-size:14px;">
-            <span style="background:${newColors.bg}; color:${newColors.text}; padding:4px 8px; border-radius:4px; font-weight:600; font-size:12px;">
-              ${change.newStatus}
-            </span>
+            ${newBadge}
           </td>
         </tr>
       `;
     }).join('');
 
-    const subject = `Alteração de Status - ${normalizedChanges.length} ${normalizedChanges.length === 1 ? 'cliente' : 'clientes'}`;
+    const subject = `Alteração de Prioridade - ${normalizedChanges.length} ${normalizedChanges.length === 1 ? 'cliente' : 'clientes'}`;
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alteração de Status</title>
+  <title>Alteração de Prioridade</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f3f4f6; font-family: Inter, Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px;">
@@ -160,7 +147,7 @@ export default async function handler(req, res) {
                 ONESTA
               </div>
               <div style="font-size:14px; color:#ffffff; letter-spacing:1px;">
-                ALTERAÇÃO DE STATUS DOS CLIENTES
+                ALTERAÇÃO DE PRIORIDADE DOS CLIENTES
               </div>
             </td>
           </tr>
@@ -179,8 +166,8 @@ export default async function handler(req, res) {
             <td style="padding:20px;">
               <p style="margin:0 0 15px 0; color:#374151; font-size:15px; line-height:1.6;">
                 ${normalizedChanges.length === 1 
-                  ? 'Uma alteração de status foi realizada no sistema por ' 
-                  : 'Uma alteração de status em lote foi realizada no sistema por '}<b style="color:#315E33;">${roleLabel}</b>.
+                  ? 'Uma alteração de prioridade foi realizada no sistema por ' 
+                  : 'Uma alteração de prioridade em lote foi realizada no sistema por '}<b style="color:#315E33;">${roleLabel}</b>.
               </p>
               <h3 style="margin:20px 0 10px 0; font-size:14px; color:#111827; font-weight:600;">
                 📊 Resumo
@@ -189,7 +176,7 @@ export default async function handler(req, res) {
                 <b>Total de ${normalizedChanges.length === 1 ? 'alteração' : 'alterações'}:</b> ${normalizedChanges.length} ${normalizedChanges.length === 1 ? 'cliente' : 'clientes'}
               </p>
               <h3 style="margin:25px 0 10px 0; font-size:14px; color:#111827; font-weight:600;">
-                🔄 ${normalizedChanges.length === 1 ? 'Alteração Realizada' : 'Alterações Realizadas'}
+                ⭐ ${normalizedChanges.length === 1 ? 'Alteração Realizada' : 'Alterações Realizadas'}
               </h3>
               <table cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
                 <thead>
@@ -201,10 +188,10 @@ export default async function handler(req, res) {
                       Email do Cliente
                     </th>
                     <th style="padding:12px; text-align:left; color:#6b7280; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
-                      Status Anterior
+                      Prioridade Anterior
                     </th>
                     <th style="padding:12px; text-align:left; color:#6b7280; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
-                      Novo Status
+                      Nova Prioridade
                     </th>
                   </tr>
                 </thead>
@@ -246,7 +233,7 @@ export default async function handler(req, res) {
               <div style="width:50px; height:2px; background:#315E33; margin:15px auto;"></div>
               <p style="margin:0; font-size:13px; color:#666666; line-height:1.8;">
                 Este email foi gerado automaticamente pelo sistema Onesta.<br>
-                Alteração de status realizada por usuário não-administrador.
+                Alteração de prioridade realizada por usuário não-administrador.
               </p>
             </td>
           </tr>
@@ -264,7 +251,7 @@ export default async function handler(req, res) {
       html,
     };
 
-    console.log(`📧 Enviando email de alteração de status: ${normalizedChanges.length} ${normalizedChanges.length === 1 ? 'cliente' : 'clientes'} por ${userEmail}`);
+    console.log(`📧 Enviando email de alteração de prioridade: ${normalizedChanges.length} ${normalizedChanges.length === 1 ? 'cliente' : 'clientes'} por ${userEmail}`);
     
     const info = await transporter.sendMail(mailOptions);
     
@@ -277,7 +264,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ Erro ao enviar email de alteração de status:', error);
+    console.error('❌ Erro ao enviar email de alteração de prioridade:', error);
     
     // Erro de email não deve falhar completamente
     return res.status(200).json({ 

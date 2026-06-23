@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import statusChangeRoutes from './lib/emails/routes/statusChangeRoutes.js';
+import priorityChangeRoutes from './lib/emails/routes/priorityChangeRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +52,7 @@ app.get('/health', (req, res) => {
 
 // Rotas de email
 app.use(statusChangeRoutes);
+app.use(priorityChangeRoutes);
 
 // Rota 404
 app.use((req, res) => {

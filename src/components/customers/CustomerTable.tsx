@@ -71,6 +71,7 @@ interface CustomerTableProps {
   onBatchStatusChange?: (ids: string[], newStatus: string) => void;
   isUpdatingStatus?: boolean;
   onPriorityChange?: (customerId: string, priority: boolean) => void;
+  onBatchPriorityChange?: (ids: string[], newPriority: boolean) => void;
   isUpdatingPriority?: boolean;
 }
 
@@ -78,6 +79,15 @@ function formatDateSafe(dateStr: string | null | undefined): string {
   if (!dateStr) return "—";
   try {
     return format(parseISO(dateStr), "dd/MM/yyyy", { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatDateTimeSafe(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    return format(parseISO(dateStr), "dd/MM/yyyy HH:mm", { locale: ptBR });
   } catch {
     return dateStr;
   }
@@ -129,6 +139,7 @@ export function CustomerTable({
   onBatchStatusChange,
   isUpdatingStatus,
   onPriorityChange,
+  onBatchPriorityChange,
   isUpdatingPriority,
 }: CustomerTableProps) {
   const isAdmin = role === UserRole.Admin;
@@ -186,6 +197,13 @@ export function CustomerTable({
   const handleBatchStatusSelect = (newStatus: string) => {
     if (newStatus && hasSelection) {
       onBatchStatusChange?.(Array.from(selectedIds), newStatus);
+    }
+  };
+
+  // Batch priority change handler
+  const handleBatchPrioritySelect = (newPriority: boolean) => {
+    if (hasSelection) {
+      onBatchPriorityChange?.(Array.from(selectedIds), newPriority);
     }
   };
 
@@ -254,6 +272,31 @@ export function CustomerTable({
               </SelectContent>
             </Select>
           </div>
+
+          {canEditPriority && (
+            <div className="flex items-center gap-2 border-l pl-4 ml-4">
+              <span className="text-xs text-muted-foreground">Prioridade:</span>
+              <Button
+                size="sm"
+                variant={hasSelection ? "default" : "outline"}
+                onClick={() => handleBatchPrioritySelect(true)}
+                disabled={isUpdatingPriority}
+                className="h-8 text-xs gap-1"
+              >
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                Marcar como Prioritário
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleBatchPrioritySelect(false)}
+                disabled={isUpdatingPriority}
+                className="h-8 text-xs"
+              >
+                Remover Prioridade
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -297,8 +340,8 @@ export function CustomerTable({
               <TableHead className="text-center">Prioritário</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Inclusão</TableHead>
-              <TableHead>Agendamento</TableHead>
               <TableHead>Últ. Tentativa</TableHead>
+              <TableHead>Agendamento</TableHead>
               <TableHead>Reserva</TableHead>
             </TableRow>
           </TableHeader>
@@ -440,19 +483,19 @@ export function CustomerTable({
                     {formatDateSafe(customer.created_at)}
                   </TableCell>
 
-                  {/* Data Agendamento */}
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDateSafe(customer.scheduled_at)}
-                  </TableCell>
-
                   {/* Última Tentativa */}
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDateSafe(customer.last_attempt)}
                   </TableCell>
 
+                  {/* Data Agendamento */}
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatDateSafe(customer.scheduled_at)}
+                  </TableCell>
+
                   {/* Data Reserva */}
                   <TableCell className="text-xs text-muted-foreground">
-                    {formatDateSafe(customer.reservation_date)}
+                    {formatDateTimeSafe(customer.reservation_date)}
                   </TableCell>
                 </TableRow>
               );
