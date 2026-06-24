@@ -518,6 +518,7 @@ export const customerService = {
   async updateCustomerPriority(
     customerId: string,
     priority: boolean,
+    currentPriority?: boolean,
     updatedBy?: string,
     userRole?: UserRoleEnum | null,
     customerData?: {
@@ -527,7 +528,8 @@ export const customerService = {
     }
   ): Promise<ApiResponse<{ id: string; priority: boolean }>> {
     try {
-      const previousPriority = priority; // Será usado no email
+      // previousPriority real do banco (fallback: oposto do novo valor)
+      const previousPriority = currentPriority ?? !priority;
 
       const updateData: Record<string, unknown> = {
         priority,
@@ -552,7 +554,7 @@ export const customerService = {
         const changes = [{
           customerCode: customerData.customerCode,
           customerEmail: customerData.customerEmail,
-          previousPriority: !priority,
+          previousPriority,
           newPriority: priority,
         }];
         // Email enviado de forma assíncrona, não bloqueia o fluxo principal
@@ -581,6 +583,7 @@ export const customerService = {
       id: string;
       customerCode?: string;
       customerEmail?: string;
+      currentPriority?: boolean;
     }>,
     newPriority: boolean,
     updatedBy?: string,
@@ -627,7 +630,7 @@ export const customerService = {
           .map((item) => ({
             customerCode: item.customerCode || '',
             customerEmail: item.customerEmail || '',
-            previousPriority: !newPriority,
+            previousPriority: item.currentPriority ?? !newPriority,
             newPriority,
           }));
 

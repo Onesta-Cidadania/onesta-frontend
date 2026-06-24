@@ -223,6 +223,7 @@ const ConsultaClientes = () => {
     const result = await customerService.updateCustomerPriority(
       customerId,
       priority,
+      customer?.priority,
       user?.email,
       role,
       {
@@ -255,6 +256,7 @@ const ConsultaClientes = () => {
       const customer = customers.find((c) => c.id === id);
       return { 
         id, 
+        currentPriority: customer?.priority,
         customerCode: customer?.customer_code || '',
         customerEmail: customer?.email || ''
       };
