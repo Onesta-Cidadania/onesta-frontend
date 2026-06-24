@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { customerService } from "@/services/customer.service";
 import { CustomerFiltersPanel } from "@/components/customers/CustomerFilters";
 import { CustomerTable } from "@/components/customers/CustomerTable";
+import { Card, CardContent } from "@/components/ui/card";
 import type {
   CustomerFilters,
   CustomerWithRelations,
@@ -35,6 +36,7 @@ const ConsultaClientes = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastAppliedFilters, setLastAppliedFilters] = useState<CustomerFilters>({});
@@ -130,7 +132,18 @@ const ConsultaClientes = () => {
     const customer = customers.find((c) => c.id === customerId);
     const currentStatus = customer?.status;
 
-    const result = await customerService.updateCustomerStatus(customerId, newStatus, currentStatus, user?.email);
+    const result = await customerService.updateCustomerStatus(
+      customerId, 
+      newStatus, 
+      currentStatus, 
+      user?.email,
+      {
+        customerName: customer?.full_name || '',
+        customerCode: customer?.customer_code || '',
+        customerEmail: customer?.email || '',
+      },
+      role
+    );
 
     if (result.error) {
       toast.error("Erro ao atualizar status: " + result.error.message);
@@ -155,10 +168,15 @@ const ConsultaClientes = () => {
 
     const items = ids.map((id) => {
       const customer = customers.find((c) => c.id === id);
-      return { id, currentStatus: customer?.status ?? "" };
+      return { 
+        id, 
+        currentStatus: customer?.status ?? "",
+        customerCode: customer?.customer_code,
+        customerEmail: customer?.email
+      };
     });
 
-    const result = await customerService.batchUpdateCustomerStatus(items, newStatus, user?.email);
+    const result = await customerService.batchUpdateCustomerStatus(items, newStatus, user?.email, role);
 
     if (result.error) {
       toast.error(result.error.message || "Erro ao atualizar status em lote.");
@@ -188,6 +206,97 @@ const ConsultaClientes = () => {
     }
 
     setIsUpdatingStatus(false);
+  };
+
+  // Priority change handler (individual)
+  const handlePriorityChange = async (customerId: string, priority: boolean) => {
+    const customer = customers.find((c) => c.id === customerId);
+    const previousPriority = customer?.priority ?? false;
+
+    // Optimistic update
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === customerId ? { ...c, priority } : c))
+    );
+
+    setIsUpdatingPriority(true);
+
+    const result = await customerService.updateCustomerPriority(
+      customerId,
+      priority,
+      customer?.priority,
+      user?.email,
+      role,
+      {
+        customerName: customer?.full_name || '',
+        customerCode: customer?.customer_code || '',
+        customerEmail: customer?.email || '',
+      }
+    );
+
+    if (result.error) {
+      toast.error("Erro ao atualizar prioridade: " + result.error.message);
+      // Revert on error
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c.id === customerId ? { ...c, priority: previousPriority } : c
+        )
+      );
+    } else {
+      toast.success(priority ? "Cliente marcado como prioritário." : "Prioridade removida.");
+    }
+
+    setIsUpdatingPriority(false);
+  };
+
+  // Priority change handler (batch)
+  const handleBatchPriorityChange = async (ids: string[], newPriority: boolean) => {
+    setIsUpdatingPriority(true);
+
+    const items = ids.map((id) => {
+      const customer = customers.find((c) => c.id === id);
+      return { 
+        id, 
+        currentPriority: customer?.priority,
+        customerCode: customer?.customer_code || '',
+        customerEmail: customer?.email || ''
+      };
+    });
+
+    const result = await customerService.batchUpdateCustomerPriority(
+      items, 
+      newPriority, 
+      user?.email,
+      role
+    );
+
+    if (result.error) {
+      toast.error(result.error.message || "Erro ao atualizar prioridade em lote.");
+    }
+
+    if (result.data) {
+      const successCount = result.data.success.length;
+      const failedCount = result.data.failed.length;
+
+      if (failedCount === 0) {
+        toast.success(
+          `${successCount} ${successCount === 1 ? "cliente marcado" : "clientes marcados"} como ${newPriority ? 'prioritário' : 'não prioritário'}.`
+        );
+      } else {
+        toast.error(
+          `${successCount} ${successCount === 1 ? "cliente marcado" : "clientes marcados"}. ${failedCount} ${failedCount === 1 ? "falha" : "falhas"}.`
+        );
+      }
+
+      // Update local state for successful changes
+      setCustomers((prev) =>
+        prev.map((c) =>
+          result.data!.success.includes(c.id) ? { ...c, priority: newPriority } : c
+        )
+      );
+      setSelectedIds(new Set());
+    }
+
+    setIsUpdatingPriority(false);
   };
 
   return (
@@ -232,25 +341,30 @@ const ConsultaClientes = () => {
         />
 
         {/* Table */}
-        <div className="mt-6">
-          <CustomerTable
-            customers={customers}
-            total={total}
-            page={page}
-            pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            isLoading={isLoading}
-            statusOptions={statusOptions}
-            role={role}
-            selectedIds={selectedIds}
-            onSelectionChange={setSelectedIds}
-            onStatusChange={handleStatusChange}
-            onBatchStatusChange={handleBatchStatusChange}
-            isUpdatingStatus={isUpdatingStatus}
-          />
-        </div>
+        <Card className="mt-6">
+          <CardContent className="p-6">
+            <CustomerTable
+              customers={customers}
+              total={total}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              isLoading={isLoading}
+              statusOptions={statusOptions}
+              role={role}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              onStatusChange={handleStatusChange}
+              onBatchStatusChange={handleBatchStatusChange}
+              isUpdatingStatus={isUpdatingStatus}
+              onPriorityChange={handlePriorityChange}
+              onBatchPriorityChange={handleBatchPriorityChange}
+              isUpdatingPriority={isUpdatingPriority}
+            />
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

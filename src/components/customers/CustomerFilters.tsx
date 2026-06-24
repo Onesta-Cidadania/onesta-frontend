@@ -163,7 +163,7 @@ export function CustomerFiltersPanel({
       {expanded && (
         <div className="px-4 pb-4 space-y-4">
           {/* Row 1: Text/Select filters */}
-          <div className={`grid gap-4 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'}`}>
+          <div className={`grid gap-4 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'}`}>
             {/* Serviço */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Serviço</Label>
@@ -253,6 +253,35 @@ export function CustomerFiltersPanel({
                       {s.label}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Prioridade */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Prioridade</Label>
+              <Select
+                value={
+                  filters.priority === undefined
+                    ? "ALL"
+                    : filters.priority
+                      ? "TRUE"
+                      : "FALSE"
+                }
+                onValueChange={(v) =>
+                  updateFilter(
+                    "priority",
+                    v === "ALL" ? undefined : v === "TRUE"
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as prioridades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Todas as prioridades</SelectItem>
+                  <SelectItem value="TRUE">Apenas prioritários</SelectItem>
+                  <SelectItem value="FALSE">Apenas não prioritários</SelectItem>
                 </SelectContent>
               </Select>
             </div>
