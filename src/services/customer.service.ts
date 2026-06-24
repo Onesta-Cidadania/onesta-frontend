@@ -20,6 +20,226 @@ import { startOfDay, endOfDay, formatISO } from 'date-fns';
 const TABLE_NAME = 'customers';
 
 /**
+ * Envia email de notificação de alteração de prioridade (individual)
+ * @param customerData - Dados do cliente e da alteração
+ * @param userRole - Role do usuário que fez a alteração
+ */
+async function sendPriorityChangeEmail(
+  customerData: {
+    customerName: string;
+    customerCode: string;
+    customerEmail: string;
+    previousPriority: boolean;
+    newPriority: boolean;
+    userEmail: string;
+  },
+  userRole: UserRoleEnum | null
+): Promise<void> {
+  try {
+    // Não enviar email se for Admin
+    if (userRole === UserRoleEnum.Admin) {
+      console.log('ℹ️  Alteração por Admin - email não enviado');
+      return;
+    }
+
+    // Em produção usa /api (path relativo), em desenvolvimento usa localhost:3001/api
+    const apiBaseUrl = import.meta.env.MODE === 'production'
+      ? '/api'
+      : 'http://localhost:3001/api';
+
+    const response = await fetch(`${apiBaseUrl}/emails/priority-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...customerData,
+        userRole: userRole || 'Unknown'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.warn('⚠️  Erro ao enviar email de notificação:', errorData);
+    } else {
+      const result = await response.json();
+      console.log('✅ Email de notificação enviado:', result);
+    }
+  } catch (error) {
+    // Erro no envio de email não deve interromper o fluxo principal
+    console.warn('⚠️  Falha ao enviar email de notificação:', error);
+  }
+}
+
+/**
+ * Envia email de notificação de alteração de prioridade em lote
+ * @param changes - Array de alterações de prioridade
+ * @param userEmail - Email do usuário que fez as alterações
+ * @param userRole - Role do usuário que fez as alterações
+ */
+async function sendBatchPriorityChangeEmail(
+  changes: Array<{
+    customerCode: string;
+    customerEmail: string;
+    previousPriority: boolean;
+    newPriority: boolean;
+  }>,
+  userEmail: string,
+  userRole: UserRoleEnum | null
+): Promise<void> {
+  try {
+    // Não enviar email se for Admin
+    if (userRole === UserRoleEnum.Admin) {
+      console.log('ℹ️  Alterações por Admin - email não enviado');
+      return;
+    }
+
+    if (changes.length === 0) {
+      console.log('ℹ️  Nenhuma alteração para notificar');
+      return;
+    }
+
+    // Em produção usa /api (path relativo), em desenvolvimento usa localhost:3001/api
+    const apiBaseUrl = import.meta.env.MODE === 'production'
+      ? '/api'
+      : 'http://localhost:3001/api';
+
+    const response = await fetch(`${apiBaseUrl}/emails/priority-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        changes,
+        userEmail,
+        userRole: userRole || 'Unknown'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.warn('⚠️  Erro ao enviar email de notificação em lote:', errorData);
+    } else {
+      const result = await response.json();
+      console.log('✅ Email de notificação em lote enviado:', result);
+    }
+  } catch (error) {
+    // Erro no envio de email não deve interromper o fluxo principal
+    console.warn('⚠️  Falha ao enviar email de notificação em lote:', error);
+  }
+}
+
+/**
+ * Envia email de notificação de alteração de status (individual)
+ * @param customerData - Dados do cliente e da alteração
+ * @param userRole - Role do usuário que fez a alteração
+ */
+async function sendStatusChangeEmail(
+  customerData: {
+    customerName: string;
+    customerCode: string;
+    customerEmail: string;
+    previousStatus: string;
+    newStatus: string;
+    userEmail: string;
+  },
+  userRole: UserRoleEnum | null
+): Promise<void> {
+  try {
+    // Não enviar email se for Admin
+    if (userRole === UserRoleEnum.Admin) {
+      console.log('ℹ️  Alteração por Admin - email não enviado');
+      return;
+    }
+
+    // Em produção usa /api (path relativo), em desenvolvimento usa localhost:3001/api
+    const apiBaseUrl = import.meta.env.MODE === 'production'
+      ? '/api'
+      : 'http://localhost:3001/api';
+
+    const response = await fetch(`${apiBaseUrl}/emails/status-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...customerData,
+        userRole: userRole || 'Unknown'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.warn('⚠️  Erro ao enviar email de notificação:', errorData);
+    } else {
+      const result = await response.json();
+      console.log('✅ Email de notificação enviado:', result);
+    }
+  } catch (error) {
+    // Erro no envio de email não deve interromper o fluxo principal
+    console.warn('⚠️  Falha ao enviar email de notificação:', error);
+  }
+}
+
+/**
+ * Envia email de notificação de alteração de status em lote
+ * @param changes - Array de alterações de status
+ * @param userEmail - Email do usuário que fez as alterações
+ * @param userRole - Role do usuário que fez as alterações
+ */
+async function sendBatchStatusChangeEmail(
+  changes: Array<{
+    customerCode: string;
+    customerEmail: string;
+    previousStatus: string;
+    newStatus: string;
+  }>,
+  userEmail: string,
+  userRole: UserRoleEnum | null
+): Promise<void> {
+  try {
+    // Não enviar email se for Admin
+    if (userRole === UserRoleEnum.Admin) {
+      console.log('ℹ️  Alterações por Admin - email não enviado');
+      return;
+    }
+
+    if (changes.length === 0) {
+      console.log('ℹ️  Nenhuma alteração para notificar');
+      return;
+    }
+
+    // Em produção usa /api (path relativo), em desenvolvimento usa localhost:3001/api
+    const apiBaseUrl = import.meta.env.MODE === 'production'
+      ? '/api'
+      : 'http://localhost:3001/api';
+
+    const response = await fetch(`${apiBaseUrl}/emails/status-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        changes,
+        userEmail,
+        userRole: userRole || 'Unknown'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.warn('⚠️  Erro ao enviar email de notificação em lote:', errorData);
+    } else {
+      const result = await response.json();
+      console.log('✅ Email de notificação em lote enviado:', result);
+    }
+  } catch (error) {
+    // Erro no envio de email não deve interromper o fluxo principal
+    console.warn('⚠️  Falha ao enviar email de notificação em lote:', error);
+  }
+}
+
+/**
  * Trata erros do Supabase e retorna um formato padronizado
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,7 +282,7 @@ export const customerService = {
       let query = supabase()
         .from(TABLE_NAME)
         .select(
-          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,last_attempt,created_at,partner_id,service_id,partners(id,full_name),services(id,name)',
+          'id,customer_code,full_name,email,status,scheduled_at,reservation_date,last_attempt,created_at,partner_id,service_id,priority,partners(id,full_name),services(id,name)',
           { count: 'exact' }
         )
         .order('created_at', { ascending: false });
@@ -86,6 +306,10 @@ export const customerService = {
 
       if (filters.partner_id) {
         query = query.eq('partner_id', filters.partner_id);
+      }
+
+      if (filters.priority !== undefined) {
+        query = query.eq('priority', filters.priority);
       }
 
       // Filtro de data de inclusão (created_at) - sem considerar horário
@@ -223,13 +447,23 @@ export const customerService = {
    * Atualiza o status de um cliente individual
    * @param customerId - ID do cliente
    * @param newStatus - Novo status
+   * @param currentStatus - Status atual
+   * @param updatedBy - Email do usuário que está atualizando
+   * @param customerData - Dados adicionais do cliente para envio de email
+   * @param userRole - Role do usuário que está atualizando
    * @returns Promise com resposta
    */
   async updateCustomerStatus(
     customerId: string,
     newStatus: string,
     currentStatus?: string,
-    updatedBy?: string
+    updatedBy?: string,
+    customerData?: {
+      customerName: string;
+      customerCode: string;
+      customerEmail: string;
+    },
+    userRole?: UserRoleEnum | null
   ): Promise<ApiResponse<{ id: string; status: string }>> {
     try {
       const updateData: Record<string, unknown> = {
@@ -250,6 +484,19 @@ export const customerService = {
         return handleError(error);
       }
 
+      // Enviar email de notificação após atualização bem-sucedida
+      // Sempre usa formato de lote (changes[]) para unificar o template do email
+      if (customerData && updatedBy && currentStatus) {
+        const changes = [{
+          customerCode: customerData.customerCode,
+          customerEmail: customerData.customerEmail,
+          previousStatus: currentStatus,
+          newStatus: newStatus,
+        }];
+        // Email enviado de forma assíncrona, não bloqueia o fluxo principal
+        sendBatchStatusChangeEmail(changes, updatedBy, userRole || null);
+      }
+
       return {
         data: data as unknown as { id: string; status: string },
         error: null,
@@ -260,15 +507,169 @@ export const customerService = {
   },
 
   /**
+   * Atualiza a prioridade de um cliente individual
+   * @param customerId - ID do cliente
+   * @param priority - Nova prioridade (true = prioritário)
+   * @param updatedBy - Email do usuário que está atualizando
+   * @param userRole - Role do usuário que está atualizando
+   * @param customerData - Dados adicionais do cliente para envio de email
+   * @returns Promise com resposta
+   */
+  async updateCustomerPriority(
+    customerId: string,
+    priority: boolean,
+    currentPriority?: boolean,
+    updatedBy?: string,
+    userRole?: UserRoleEnum | null,
+    customerData?: {
+      customerName: string;
+      customerCode: string;
+      customerEmail: string;
+    }
+  ): Promise<ApiResponse<{ id: string; priority: boolean }>> {
+    try {
+      // previousPriority real do banco (fallback: oposto do novo valor)
+      const previousPriority = currentPriority ?? !priority;
+
+      const updateData: Record<string, unknown> = {
+        priority,
+        updated_at: new Date().toISOString(),
+        ...(updatedBy ? { updated_by: updatedBy } : {}),
+      };
+
+      const { data, error } = await supabase()
+        .from(TABLE_NAME)
+        .update(updateData)
+        .eq('id', customerId)
+        .select('id,priority')
+        .single();
+
+      if (error) {
+        return handleError(error);
+      }
+
+      // Enviar email de notificação após atualização bem-sucedida
+      // Sempre usa formato de lote (changes[]) para unificar o template do email
+      if (customerData && updatedBy) {
+        const changes = [{
+          customerCode: customerData.customerCode,
+          customerEmail: customerData.customerEmail,
+          previousPriority,
+          newPriority: priority,
+        }];
+        // Email enviado de forma assíncrona, não bloqueia o fluxo principal
+        sendBatchPriorityChangeEmail(changes, updatedBy, userRole || null);
+      }
+
+      return {
+        data: data as unknown as { id: string; priority: boolean },
+        error: null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Atualiza a prioridade de múltiplos clientes em lote
+   * @param items - Array de items com id, customerCode e customerEmail
+   * @param newPriority - Nova prioridade (true = prioritário)
+   * @param updatedBy - Email do usuário que está atualizando
+   * @param userRole - Role do usuário que está atualizando
+   * @returns Promise com resposta contendo successes e failures
+   */
+  async batchUpdateCustomerPriority(
+    items: Array<{
+      id: string;
+      customerCode?: string;
+      customerEmail?: string;
+      currentPriority?: boolean;
+    }>,
+    newPriority: boolean,
+    updatedBy?: string,
+    userRole?: UserRoleEnum | null
+  ): Promise<ApiResponse<{ success: string[]; failed: string[] }>> {
+    try {
+      const updatePayload: Record<string, unknown> = {
+        priority: newPriority,
+        updated_at: new Date().toISOString(),
+      };
+
+      const results = await Promise.allSettled(
+        items.map(async (item) => {
+          const payload = {
+            ...updatePayload,
+            ...(updatedBy ? { updated_by: updatedBy } : {}),
+          };
+          const { error } = await supabase()
+            .from(TABLE_NAME)
+            .update(payload)
+            .eq('id', item.id);
+
+          if (error) throw error;
+          return item.id;
+        })
+      );
+
+      const success: string[] = [];
+      const failed: string[] = [];
+
+      results.forEach((result, index) => {
+        const id = items[index].id;
+        if (result.status === 'fulfilled') {
+          success.push(id);
+        } else {
+          failed.push(id);
+        }
+      });
+
+      // Enviar email de notificação em lote apenas se houver alterações bem-sucedidas
+      if (success.length > 0 && updatedBy) {
+        const changes = items
+          .filter((item, index) => results[index].status === 'fulfilled')
+          .map((item) => ({
+            customerCode: item.customerCode || '',
+            customerEmail: item.customerEmail || '',
+            previousPriority: item.currentPriority ?? !newPriority,
+            newPriority,
+          }));
+
+        // Email enviado de forma assíncrona, não bloqueia o fluxo principal
+        sendBatchPriorityChangeEmail(changes, updatedBy, userRole || null);
+      }
+
+      return {
+        data: { success, failed },
+        error: failed.length > 0
+          ? {
+              message: `${failed.length} de ${items.length} atualizações falharam`,
+              code: 'PARTIAL_FAILURE',
+            }
+          : null,
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /**
    * Atualiza o status de múltiplos clientes em lote
-   * @param customerIds - Array de IDs dos clientes
+   * @param items - Array de items com id, currentStatus, customerCode e customerEmail
    * @param newStatus - Novo status
+   * @param updatedBy - Email do usuário que está atualizando
+   * @param userRole - Role do usuário que está atualizando
    * @returns Promise com resposta contendo successes e failures
    */
   async batchUpdateCustomerStatus(
-    items: { id: string; currentStatus: string }[],
+    items: Array<{
+      id: string;
+      currentStatus: string;
+      customerCode?: string;
+      customerEmail?: string;
+    }>,
     newStatus: string,
-    updatedBy?: string
+    updatedBy?: string,
+    userRole?: UserRoleEnum | null
   ): Promise<ApiResponse<{ success: string[]; failed: string[] }>> {
     try {
       const updatePayload: Record<string, unknown> = {
@@ -304,6 +705,21 @@ export const customerService = {
           failed.push(id);
         }
       });
+
+      // Enviar email de notificação em lote apenas se houver alterações bem-sucedidas
+      if (success.length > 0 && updatedBy) {
+        const changes = items
+          .filter((item, index) => results[index].status === 'fulfilled')
+          .map((item) => ({
+            customerCode: item.customerCode || '',
+            customerEmail: item.customerEmail || '',
+            previousStatus: item.currentStatus,
+            newStatus,
+          }));
+
+        // Email enviado de forma assíncrona, não bloqueia o fluxo principal
+        sendBatchStatusChangeEmail(changes, updatedBy, userRole || null);
+      }
 
       return {
         data: { success, failed },

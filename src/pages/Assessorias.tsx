@@ -108,6 +108,7 @@ const Assessorias = () => {
         window.scrollTo(0, 0);
     }, []);
 
+    // Buscar quando role, partnerId, page ou pageSize mudam
     useEffect(() => {
         if (role) {
             void fetchPartners();

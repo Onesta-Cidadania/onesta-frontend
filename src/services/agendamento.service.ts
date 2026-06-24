@@ -283,7 +283,7 @@ const enviarEmailCliente = async (customer: Record<string, unknown> & { customer
   try {
     const apiBaseUrl = import.meta.env.MODE === 'production'
       ? '/api'
-      : 'http://localhost:3000/api';
+      : 'http://localhost:3001/api';
 
     const response = await fetch(`${apiBaseUrl}/send-client-email`, {
       method: 'POST',
@@ -321,7 +321,7 @@ const enviarEmailAgendamento = async (
   try {
     const apiBaseUrl = import.meta.env.MODE === 'production'
       ? '/api'
-      : 'http://localhost:3000/api';
+      : 'http://localhost:3001/api';
 
     const agendamentoComDadosEmail = {
       ...customer,

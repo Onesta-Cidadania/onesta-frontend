@@ -273,6 +273,7 @@ export interface Customer {
   last_attempt: string | null;
   partner_id: string;
   service_id: number;
+  priority: boolean;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
@@ -363,6 +364,7 @@ export interface CustomerFilters {
   scheduled_at_end?: Date;
   reservation_date_start?: Date;
   reservation_date_end?: Date;
+  priority?: boolean;
 }
 
 /**
