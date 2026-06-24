@@ -40,43 +40,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/lib/auth/access-control";
-import { supabase } from "@/lib/supabase/client";
-
-interface UserOption {
-  user_id: string;
-  email: string;
-}
-
-interface PartnerOption {
-  id: string;
-  full_name: string;
-  email: string;
-}
-
-interface AccessProfileRow {
-  id: string;
-  user_id: string;
-  role: UserRole;
-  partner_id: string | null;
-  created_at: string | null;
-  user_profiles: UserOption | null;
-  partners: PartnerOption | null;
-}
-
-interface AccessProfile {
-  id: string;
-  userId: string;
-  email: string;
-  role: UserRole;
-  partnerId: string | null;
-  partnerName: string | null;
-  createdAt: string | null;
-}
+import { toast } from "@/components/ui/sonner";
+import { accessProfileService } from "@/services/access-profile.service";
+import type { AccessProfile, PartnerOption, UserOption, UserRoleType } from "@/lib/supabase/types";
 
 interface AccessProfileFormState {
   userId: string;
   userEmail: string;
-  role: UserRole;
+  role: UserRoleType;
   partnerId: string;
   partnerName: string;
 }
@@ -89,7 +60,7 @@ const emptyForm: AccessProfileFormState = {
   partnerName: "",
 };
 
-const accessProfileRoleLabels: Record<UserRole, string> = {
+const accessProfileRoleLabels: Record<UserRoleType, string> = {
   [UserRole.Customer]: "Cliente",
   [UserRole.Partner]: "Assessoria",
   [UserRole.Admin]: "Administrador",
@@ -122,9 +93,6 @@ const PerfisAcesso = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [dialogErrorMessage, setDialogErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUserPopoverOpen, setIsUserPopoverOpen] = useState(false);
   const [isPartnerPopoverOpen, setIsPartnerPopoverOpen] = useState(false);
@@ -132,7 +100,7 @@ const PerfisAcesso = () => {
   const [profileToDelete, setProfileToDelete] = useState<AccessProfile | null>(null);
   const [form, setForm] = useState<AccessProfileFormState>(emptyForm);
   const pagination = usePaginatedQuery(10);
-  const { page, pageSize, total, totalPages, from, to, setPage, setPageSize, setTotal, resetPage } = pagination;
+  const { page, pageSize, total, totalPages, setPage, setPageSize, setTotal, resetPage } = pagination;
   const isEditingOwnProfile = editingProfile?.userId === user?.id;
 
   const sortedPartnerOptions = useMemo(
@@ -141,138 +109,51 @@ const PerfisAcesso = () => {
   );
 
   const fetchUsersByEmail = useCallback(async (search: string) => {
-    const normalizedSearch = search.trim();
+    const result = await accessProfileService.getUserOptions(search);
 
-    let query = supabase()
-      .from("user_profiles")
-      .select("user_id,email")
-      .order("email", { ascending: true })
-      .limit(normalizedSearch ? 100 : 50);
-
-    if (normalizedSearch) {
-      query = query.ilike("email", `%${normalizedSearch}%`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
+    if (result.error) {
       setUserOptions([]);
       setHasMoreUserOptions(false);
       return;
     }
 
-    const profileOptions = (data ?? []) as UserOption[];
-    const userIds = profileOptions.map((option) => option.user_id);
-    let linkedUserIds = new Set<string>();
-
-    if (userIds.length > 0) {
-      const { data: linkedRoles, error: linkedRolesError } = await supabase()
-        .from("user_roles")
-        .select("user_id")
-        .in("user_id", userIds);
-
-      if (linkedRolesError) {
-        setUserOptions([]);
-        setHasMoreUserOptions(false);
-        return;
-      }
-
-      linkedUserIds = new Set(((linkedRoles ?? []) as Array<{ user_id: string }>).map((roleRow) => roleRow.user_id));
+    if (result.data) {
+      setUserOptions(result.data.options);
+      setHasMoreUserOptions(result.data.hasMore);
     }
-
-    const options = profileOptions.filter((option) => !linkedUserIds.has(option.user_id));
-    const limit = normalizedSearch ? 20 : 5;
-    setUserOptions(options.slice(0, limit));
-    setHasMoreUserOptions(options.length > limit);
   }, []);
 
   const fetchPartnersBySearch = useCallback(async (search: string) => {
-    const normalizedSearch = search.trim();
+    const result = await accessProfileService.getPartnerOptions(search);
 
-    let query = supabase()
-      .from("partners")
-      .select("id,full_name,email")
-      .order("full_name", { ascending: true })
-      .limit(normalizedSearch ? 21 : 6);
-
-    if (normalizedSearch) {
-      query = query.or(`full_name.ilike.%${normalizedSearch}%,email.ilike.%${normalizedSearch}%`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
+    if (result.error) {
       setPartnerOptions([]);
       setHasMorePartnerOptions(false);
       return;
     }
 
-    const options = (data ?? []) as PartnerOption[];
-    const limit = normalizedSearch ? 20 : 5;
-    setPartnerOptions(options.slice(0, limit));
-    setHasMorePartnerOptions(options.length > limit);
+    if (result.data) {
+      setPartnerOptions(result.data.options);
+      setHasMorePartnerOptions(result.data.hasMore);
+    }
   }, []);
 
   const fetchProfiles = useCallback(async () => {
     setIsLoading(true);
-    setErrorMessage("");
 
-    try {
-      const normalizedEmail = emailFilter.trim();
+    const result = await accessProfileService.getProfiles(emailFilter, page, pageSize);
 
-      let query = supabase()
-        .from("user_roles")
-        .select(
-          `
-            id,
-            user_id,
-            role,
-            partner_id,
-            created_at,
-            user_profiles!user_roles_user_id_fkey(user_id,email),
-            partners(id,full_name,email)
-          `,
-          { count: "exact" },
-        )
-        .order("created_at", { ascending: false })
-        .range(from, to);
-
-      if (normalizedEmail) {
-        query = query.ilike("user_profiles.email", `%${normalizedEmail}%`).not("user_profiles", "is", null);
-      }
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        setErrorMessage("Não foi possível carregar os perfis de acesso.");
-        setProfiles([]);
-        setTotal(0);
-        return;
-      }
-
-      const rows = (data ?? []) as AccessProfileRow[];
-      setTotal(count ?? 0);
-      setProfiles(
-        rows.map((row) => {
-          return {
-            id: row.id,
-            userId: row.user_id,
-            email: row.user_profiles?.email ?? "-",
-            role: row.role,
-            partnerId: row.partner_id,
-            partnerName: row.partners?.full_name ?? null,
-            createdAt: row.created_at,
-          };
-        }),
-      );
-    } catch {
-      setErrorMessage("Não foi possível carregar os perfis de acesso.");
+    if (result.error) {
+      toast.error("Não foi possível carregar os perfis de acesso.");
       setProfiles([]);
       setTotal(0);
-    } finally {
-      setIsLoading(false);
+    } else if (result.data) {
+      setProfiles(result.data.profiles);
+      setTotal(result.data.total);
     }
-  }, [emailFilter, from, setTotal, to]);
+
+    setIsLoading(false);
+  }, [emailFilter, page, pageSize, setTotal]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -319,9 +200,6 @@ const PerfisAcesso = () => {
     setPartnerOptions([]);
     setHasMoreUserOptions(false);
     setHasMorePartnerOptions(false);
-    setErrorMessage("");
-    setDialogErrorMessage("");
-    setSuccessMessage("");
     setIsDialogOpen(true);
   };
 
@@ -344,24 +222,19 @@ const PerfisAcesso = () => {
     );
     setHasMoreUserOptions(false);
     setHasMorePartnerOptions(false);
-    setErrorMessage("");
-    setDialogErrorMessage("");
-    setSuccessMessage("");
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setDialogErrorMessage("");
-    setSuccessMessage("");
 
     if (!form.userId) {
-      setDialogErrorMessage("Selecione o usuário.");
+      toast.error("Selecione o usuário.");
       return;
     }
 
     if (!form.partnerId) {
-      setDialogErrorMessage("Selecione a assessoria.");
+      toast.error("Selecione a assessoria.");
       return;
     }
 
@@ -375,28 +248,23 @@ const PerfisAcesso = () => {
 
     try {
       if (editingProfile) {
-        const { data, error } = await supabase()
-          .from("user_roles")
-          .update(payload)
-          .eq("id", editingProfile.id)
-          .select("id")
-          .single();
+        const result = await accessProfileService.updateProfile(editingProfile.id, payload);
 
-        if (error || !data) {
-          setDialogErrorMessage("Não foi possível atualizar o perfil de acesso.");
+        if (result.error || !result.data) {
+          toast.error("Não foi possível atualizar o perfil de acesso.");
           return;
         }
 
-        setSuccessMessage("Perfil de acesso atualizado com sucesso.");
+        toast.success("Perfil de acesso atualizado com sucesso.");
       } else {
-        const { data, error } = await supabase().from("user_roles").insert(payload).select("id").single();
+        const result = await accessProfileService.createProfile(payload);
 
-        if (error || !data) {
-          setDialogErrorMessage("Não foi possível criar o perfil. Verifique se o usuário já possui perfil.");
+        if (result.error || !result.data) {
+          toast.error("Não foi possível criar o perfil. Verifique se o usuário já possui perfil.");
           return;
         }
 
-        setSuccessMessage("Perfil de acesso criado com sucesso.");
+        toast.success("Perfil de acesso criado com sucesso.");
       }
 
       setIsDialogOpen(false);
@@ -404,9 +272,7 @@ const PerfisAcesso = () => {
       setEditingProfile(null);
       await fetchProfiles();
     } catch {
-      setDialogErrorMessage(
-        editingProfile ? "Não foi possível atualizar o perfil de acesso." : "Não foi possível criar o perfil.",
-      );
+      toast.error(editingProfile ? "Não foi possível atualizar o perfil de acesso." : "Não foi possível criar o perfil.");
     } finally {
       setIsSaving(false);
     }
@@ -417,11 +283,8 @@ const PerfisAcesso = () => {
       return;
     }
 
-    setErrorMessage("");
-    setSuccessMessage("");
-
     if (profileToDelete.userId === user?.id) {
-      setErrorMessage("Não é possível excluir seu próprio perfil de acesso.");
+      toast.error("Não é possível excluir seu próprio perfil de acesso.");
       setProfileToDelete(null);
       return;
     }
@@ -429,14 +292,14 @@ const PerfisAcesso = () => {
     setIsDeleting(true);
 
     try {
-      const { error } = await supabase().from("user_roles").delete().eq("id", profileToDelete.id);
+      const result = await accessProfileService.deleteProfile(profileToDelete.id);
 
-      if (error) {
-        setErrorMessage("Não foi possível excluir o perfil de acesso.");
+      if (result.error) {
+        toast.error("Não foi possível excluir o perfil de acesso.");
         return;
       }
 
-      setSuccessMessage("Perfil de acesso excluído com sucesso.");
+      toast.success("Perfil de acesso excluído com sucesso.");
       setProfileToDelete(null);
 
       if (profiles.length === 1 && page > 1) {
@@ -445,7 +308,7 @@ const PerfisAcesso = () => {
         await fetchProfiles();
       }
     } catch {
-      setErrorMessage("Não foi possível excluir o perfil de acesso.");
+      toast.error("Não foi possível excluir o perfil de acesso.");
     } finally {
       setIsDeleting(false);
     }
@@ -495,18 +358,6 @@ const PerfisAcesso = () => {
                 Buscar
               </Button>
             </div>
-
-            {errorMessage && (
-              <p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {errorMessage}
-              </p>
-            )}
-
-            {successMessage && (
-              <p className="mb-4 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
-                {successMessage}
-              </p>
-            )}
 
             {isLoading ? (
               <div className="flex min-h-48 items-center justify-center">
@@ -582,12 +433,6 @@ const PerfisAcesso = () => {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {dialogErrorMessage && (
-              <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {dialogErrorMessage}
-              </p>
-            )}
-
             <div className="space-y-2">
               <Label>Usuário</Label>
               <Popover
@@ -661,7 +506,7 @@ const PerfisAcesso = () => {
                 onValueChange={(value) =>
                   setForm((current) => ({
                     ...current,
-                    role: value as UserRole,
+                    role: value as UserRoleType,
                   }))
                 }
                 disabled={isSaving || isEditingOwnProfile}
@@ -786,7 +631,14 @@ const PerfisAcesso = () => {
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Excluindo" : "Excluir"}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Excluindo
+                </>
+              ) : (
+                "Excluir"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
