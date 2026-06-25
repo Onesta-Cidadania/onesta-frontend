@@ -329,7 +329,7 @@ export function CustomerTable({
                   })
                   .map((status) => (
                     <SelectItem key={status.code} value={status.code}>
-                      {status.label}
+                      {status.action || status.label}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -528,7 +528,7 @@ export function CustomerTable({
                         <SelectContent>
                           {availableStatuses.map((status) => (
                             <SelectItem key={status.code} value={status.code}>
-                              {status.label}
+                              {status.action || status.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
