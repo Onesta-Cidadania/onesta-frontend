@@ -61,6 +61,14 @@ const Agendamentos = () => {
       icon: FileText,
       url: "https://forms.gle/WXYHHc8udJnT77nn7",
       color: "from-teal-600 to-teal-700"
+    },
+    {
+      id: 7,
+      title: "Carta d'Identità Curitiba - Identidade Curitiba - CIE",
+      description: "Solicitação da Carta d'Identità (CIE) em Curitiba",
+      icon: FileText,
+      url: "https://forms.gle/HSZHY1fjucDT7HrBA",
+      color: "from-indigo-600 to-indigo-700"
     }
   ];
 
