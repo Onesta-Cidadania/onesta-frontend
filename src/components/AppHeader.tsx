@@ -10,7 +10,7 @@ const AppHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { role, signOut, status } = useAuth();
+  const { role, signOut, status, userDisplayName } = useAuth();
   const isAuthenticated = status === "authenticated";
   const canAccessPartners = isRoleIn(role, [UserRole.Admin, UserRole.Partner]);
   const canAccessProfiles = role === UserRole.Admin;
@@ -75,19 +75,27 @@ const AppHeader = () => {
               <span className="hidden text-sm text-muted-foreground sm:inline">Cidadania Italiana</span>
             </button>
 
-            <button
-              type="button"
-              className="p-2"
-              onClick={() => setIsMenuOpen((current) => !current)}
-              aria-label={isMenuOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"}
-              aria-expanded={isMenuOpen}
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6 text-foreground" />
-              ) : (
-                <Menu className="h-6 w-6 text-foreground" />
+            <div className="flex min-w-0 items-center gap-3">
+              {isAuthenticated && userDisplayName && (
+                <span className="hidden max-w-[220px] truncate text-sm font-medium text-foreground sm:block">
+                  {userDisplayName}
+                </span>
               )}
-            </button>
+
+              <button
+                type="button"
+                className="p-2"
+                onClick={() => setIsMenuOpen((current) => !current)}
+                aria-label={isMenuOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"}
+                aria-expanded={isMenuOpen}
+              >
+                {isMenuOpen ? (
+                  <X className="h-6 w-6 text-foreground" />
+                ) : (
+                  <Menu className="h-6 w-6 text-foreground" />
+                )}
+              </button>
+            </div>
           </div>
 
           {isMenuOpen && (

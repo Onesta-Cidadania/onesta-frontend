@@ -125,17 +125,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [applySession]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({
-      status,
-      session,
-      user: session?.user ?? null,
-      profile,
-      role: profile?.role ?? null,
-      partnerId: profile?.partner_id ?? null,
-      isLoading: status === "loading",
-      refreshProfile,
-      signOut,
-    }),
+    () => {
+      const user = session?.user ?? null;
+      const metadataName =
+        typeof user?.user_metadata?.name === "string" && user.user_metadata.name.trim()
+          ? user.user_metadata.name.trim()
+          : typeof user?.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()
+            ? user.user_metadata.full_name.trim()
+            : null;
+
+      return {
+        status,
+        session,
+        user,
+        userDisplayName: metadataName || user?.email || null,
+        profile,
+        role: profile?.role ?? null,
+        partnerId: profile?.partner_id ?? null,
+        isLoading: status === "loading",
+        refreshProfile,
+        signOut,
+      };
+    },
     [profile, refreshProfile, session, signOut, status],
   );
 
