@@ -396,7 +396,6 @@ export function CustomerTable({
               </TableHead>
               <TableHead className="w-[80px]">Código</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Serviço</TableHead>
               {isAdmin && (
                 <TableHead>Assessoria</TableHead>
@@ -407,7 +406,10 @@ export function CustomerTable({
                 label="Inclusão"
                 tooltip="Data em que o cliente foi incluído no sistema"
               />
-              <TableHead>Últ. Tentativa</TableHead>
+              <HeaderWithTooltip
+                label="Tentativa"
+                tooltip="Dia em que foi feita a última tentativa de agendamento"
+              />
               <HeaderWithTooltip
                 label="Agendado"
                 tooltip="Dia em que o sistema teve êxito no agendamento do cliente"
@@ -416,6 +418,7 @@ export function CustomerTable({
                 label="Reserva"
                 tooltip="Data em que ficou agendado para o cliente comparecer ao Consulado"
               />
+              <TableHead>Email</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -460,11 +463,6 @@ export function CustomerTable({
                   {/* Nome */}
                   <TableCell>
                     <div className="font-medium text-sm">{customer.full_name}</div>
-                  </TableCell>
-
-                  {/* Email */}
-                  <TableCell className="text-sm text-muted-foreground">
-                    {customer.email}
                   </TableCell>
 
                   {/* Serviço */}
@@ -561,6 +559,11 @@ export function CustomerTable({
                   {/* Data Reserva (sem conversão UTC) */}
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDateTimeNoTzSafe(customer.reservation_date)}
+                  </TableCell>
+
+                  {/* Email */}
+                  <TableCell className="text-sm text-muted-foreground">
+                    {customer.email}
                   </TableCell>
                 </TableRow>
               );
