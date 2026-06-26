@@ -182,6 +182,7 @@ export interface CustomerStatusOption {
   code: string;
   label: string;
   description: string | null;
+  action: string | null;
 }
 
 /**

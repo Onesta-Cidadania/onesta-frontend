@@ -5,7 +5,7 @@
 
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckSquare, Star, Users, X } from "lucide-react";
+import { CheckSquare, HelpCircle, Star, Users, X } from "lucide-react";
 import { UserRole } from "@/lib/auth/access-control";
 import { PaginationControls } from "@/components/PaginationControls";
 import {
@@ -26,6 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { CustomerWithRelations, CustomerStatusOption } from "@/lib/supabase/types";
 
 // Mapeamento de status code → classes CSS do badge
@@ -42,14 +48,14 @@ const STATUS_COLOR_MAP: Record<string, string> = {
 const STATUS_LABEL_FALLBACK: Record<string, string> = {
   EM_ANALISE: "Em Análise",
   AGUARDANDO_CORRECAO: "Aguardando Correção",
-  EM_ANDAMENTO: "Em Andamento",
+  EM_ANDAMENTO: "Tentando Agendar",
   PAUSADO: "Pausado",
   CANCELADO: "Cancelado",
   AGENDADO: "Agendado",
 };
 
 // Status que o Assessor pode selecionar
-const PARTNER_ALLOWED_TARGETS = ["CANCELADO", "PAUSADO"];
+const PARTNER_ALLOWED_TARGETS = ["CANCELADO", "PAUSADO", "EM_ANALISE"];
 
 // Status que bloqueia o Assessor de fazer qualquer alteração
 const PARTNER_BLOCKED_CURRENT = "AGENDADO";
@@ -94,6 +100,36 @@ function formatDateTimeSafe(dateStr: string | null | undefined): string {
 }
 
 /**
+ * Formata data SEM conversão de timezone (considera apenas a parte YYYY-MM-DD).
+ * Usado para campos já gravados em horário local (ex.: scheduled_at), evitando
+ * que datas no fim do dia "andem" para o dia anterior por causa do offset UTC.
+ */
+function formatDateNoTzSafe(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    const datePart = dateStr.slice(0, 10);
+    return format(parseISO(datePart), "dd/MM/yyyy", { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
+ * Formata data/hora SEM conversão de timezone (exibe data E hora exatamente
+ * como estão gravados no banco). Remove o offset/zone da string ISO antes de
+ * interpretar, para que o parseISO não converta para o timezone local do browser.
+ */
+function formatDateTimeNoTzSafe(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    const noTz = dateStr.replace(/([+-]\d{2}:\d{2}|Z)$/, "");
+    return format(parseISO(noTz), "dd/MM/yyyy HH:mm", { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
  * Retorna os status disponíveis para seleção baseado no role e status atual
  */
 function getAvailableStatuses(
@@ -111,7 +147,7 @@ function getAvailableStatuses(
     if (currentStatus === PARTNER_BLOCKED_CURRENT) {
       return [];
     }
-    // Assessor pode trocar apenas para CANCELADO ou PAUSADO (exceto o atual)
+    // Assessor pode trocar apenas para CANCELADO, PAUSADO ou EM_ANALISE (exceto o atual)
     return allStatuses.filter(
       (s) =>
         PARTNER_ALLOWED_TARGETS.includes(s.code) && s.code !== currentStatus
@@ -120,6 +156,33 @@ function getAvailableStatuses(
 
   // Customer e outros não podem alterar
   return [];
+}
+
+/**
+ * Cabeçalho de coluna com tooltip de ajuda (ícone de interrogação)
+ */
+function HeaderWithTooltip({
+  label,
+  tooltip,
+  className,
+}: {
+  label: string;
+  tooltip: string;
+  className?: string;
+}) {
+  return (
+    <TableHead className={className}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/60">
+            {label}
+            <HelpCircle className="h-3 w-3 text-muted-foreground/70" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-[220px] text-xs">{tooltip}</TooltipContent>
+      </Tooltip>
+    </TableHead>
+  );
 }
 
 export function CustomerTable({
@@ -266,7 +329,7 @@ export function CustomerTable({
                   })
                   .map((status) => (
                     <SelectItem key={status.code} value={status.code}>
-                      {status.label}
+                      {status.action || status.label}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -311,6 +374,7 @@ export function CustomerTable({
             </div>
           </div>
         )}
+        <TooltipProvider>
         <Table>
           <TableHeader>
             <TableRow>
@@ -332,17 +396,29 @@ export function CustomerTable({
               </TableHead>
               <TableHead className="w-[80px]">Código</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Serviço</TableHead>
               {isAdmin && (
                 <TableHead>Assessoria</TableHead>
               )}
               <TableHead className="text-center">Prioritário</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Inclusão</TableHead>
-              <TableHead>Últ. Tentativa</TableHead>
-              <TableHead>Agendamento</TableHead>
-              <TableHead>Reserva</TableHead>
+              <HeaderWithTooltip
+                label="Inclusão"
+                tooltip="Data em que o cliente foi incluído no sistema"
+              />
+              <HeaderWithTooltip
+                label="Tentativa"
+                tooltip="Dia em que foi feita a última tentativa de agendamento"
+              />
+              <HeaderWithTooltip
+                label="Agendado"
+                tooltip="Dia em que o sistema teve êxito no agendamento do cliente"
+              />
+              <HeaderWithTooltip
+                label="Reserva"
+                tooltip="Data em que ficou agendado para o cliente comparecer ao Consulado"
+              />
+              <TableHead>Email</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -386,20 +462,7 @@ export function CustomerTable({
 
                   {/* Nome */}
                   <TableCell>
-                    <div>
-                      <div className="font-medium text-sm">{customer.full_name}</div>
-                      <div className="text-xs text-muted-foreground md:hidden">
-                        {customer.email}
-                      </div>
-                      <div className="text-xs text-muted-foreground lg:hidden">
-                        {serviceName}
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Email */}
-                  <TableCell className="text-sm text-muted-foreground">
-                    {customer.email}
+                    <div className="font-medium text-sm">{customer.full_name}</div>
                   </TableCell>
 
                   {/* Serviço */}
@@ -463,7 +526,7 @@ export function CustomerTable({
                         <SelectContent>
                           {availableStatuses.map((status) => (
                             <SelectItem key={status.code} value={status.code}>
-                              {status.label}
+                              {status.action || status.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -493,15 +556,21 @@ export function CustomerTable({
                     {formatDateSafe(customer.scheduled_at)}
                   </TableCell>
 
-                  {/* Data Reserva */}
+                  {/* Data Reserva (sem conversão UTC) */}
                   <TableCell className="text-xs text-muted-foreground">
-                    {formatDateTimeSafe(customer.reservation_date)}
+                    {formatDateTimeNoTzSafe(customer.reservation_date)}
+                  </TableCell>
+
+                  {/* Email */}
+                  <TableCell className="text-sm text-muted-foreground">
+                    {customer.email}
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
+        </TooltipProvider>
       </div>
 
       {/* Pagination */}
