@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from "react";
 import { useLocalStorageForm } from "@/hooks/useLocalStorageForm";
 import { salvarAgendamento } from "@/services/agendamento.service";
 import { useAuth } from "@/hooks/use-auth";
+import { toast } from "@/components/ui/sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,29 +81,33 @@ const Agendamento = () => {
       };
       
       const resultado = await salvarAgendamento(formDataComPartnerId);
-      
+
       if (resultado.success) {
         console.log('Agendamento salvo com sucesso:', resultado.data);
-        
+
         if (resultado.jsoncUrl) {
           console.log('JSONC salvo no Storage:', resultado.jsoncUrl);
         } else if (resultado.jsoncError) {
           console.warn('Erro ao salvar JSONC:', resultado.jsoncError);
         }
-        
+
+        // Apenas em caso de sucesso: ir para a tela de sucesso
         setCurrentStep(totalSteps - 1);
-        
         localStorage.removeItem("agendamento-draft");
         localStorage.removeItem("agendamento-draft-step");
+        toast.success("Requerimento enviado com sucesso!");
       } else {
+        // Em caso de erro: permanece na mesma tela e mostra toast de erro
         console.error('Erro ao salvar agendamento:', resultado.error);
-        alert('Erro ao salvar agendamento: ' + resultado.error);
-        setCurrentStep(totalSteps - 1);
+        toast.error("Erro ao salvar agendamento", {
+          description:
+            (typeof resultado.error === "string" && resultado.error) ||
+            "Tente novamente em instantes.",
+        });
       }
     } catch (error) {
       console.error('Submit error:', error);
-      alert('Erro ao enviar formulário. Por favor, tente novamente.');
-      setIsSubmitting(false);
+      toast.error("Erro ao enviar formulário. Por favor, tente novamente.");
     } finally {
       setIsSubmitting(false);
     }

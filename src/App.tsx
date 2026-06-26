@@ -39,8 +39,15 @@ const App = () => (
             <Route path="/acesso-negado" element={<AcessoNegado />} />
             {/* Rota pública - sem ProtectedRoute */}
             <Route path="/agendamentos" element={<Agendamentos />} />
-            {/* Formulário dinâmico - público */}
-            <Route path="/agendamento" element={<Agendamento />} />
+            {/* Formulário dinâmico - restrito a Admin */}
+            <Route
+              path="/agendamento"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                  <Agendamento />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/testes" element={<Testes />} />
             <Route
               path="/assessorias"

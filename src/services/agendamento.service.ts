@@ -95,7 +95,7 @@ interface CustomerInsert {
   email_otp: string | null;
   otp_email_password: string | null;
   restriction_periods: unknown;
-  partner_id: string;
+  partner_id: string | null;
   service_id: number; // bigint → services.id
 }
 
@@ -137,7 +137,7 @@ const transformarParaCustomer = (formData: FormData): CustomerInsert => {
     email_otp: formData.email_otp || null,
     otp_email_password: formData.senha_email_otp || null,
     restriction_periods: periodosRestricao.length > 0 ? periodosRestricao : [],
-    partner_id: formData.partnerId || '',
+    partner_id: formData.partnerId || null,
     service_id: formData.servicoId || 0,
   };
 };
