@@ -73,7 +73,7 @@ const Agendamentos = () => {
     {
       id: 8,
       title: "Passaporte Recife - PE",
-      description: "Atendimento para Pernambuco (Recife)",
+      description: "",
       icon: MapPin,
       url: "https://forms.gle/rE8gziaBmsy8KmGX9",
       color: "from-amber-600 to-amber-700"
