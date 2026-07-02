@@ -8,6 +8,7 @@ export interface AuthContextValue {
   status: AuthStatus;
   session: Session | null;
   user: User | null;
+  userDisplayName: string | null;
   profile: UserRoleProfile | null;
   role: UserRole | null;
   partnerId: string | null;
